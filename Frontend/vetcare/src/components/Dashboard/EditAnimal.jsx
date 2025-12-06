@@ -30,7 +30,7 @@ const EditAnimal = () => {
   useEffect(() => {
     const fetchAnimal = async () => {
       try {
-        const res = await axios.get(`http://localhost:5001/api/animals/${id}`);
+        const res = await axios.get(`https://vetcare-1.onrender.com/api/animals/${id}`);
         const a = res.data;
 
         setFormData({
@@ -110,7 +110,7 @@ const EditAnimal = () => {
         }
       };
 
-      await axios.put(`http://localhost:5001/api/animals/${id}`, updated);
+      await axios.put(`https://vetcare-1.onrender.com/api/animals/${id}`, updated);
 
       navigate("/dashboard");
     } catch (error) {

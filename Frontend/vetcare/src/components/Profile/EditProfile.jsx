@@ -14,7 +14,7 @@ const EditProfile = () => {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await axios.get("http://localhost:5001/profile", {
+        const res = await axios.get("https://vetcare-1.onrender.com/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -48,7 +48,7 @@ const EditProfile = () => {
     try {
       const token = localStorage.getItem("token");
 
-      await axios.put("http://localhost:5001/profile", formData, {
+      await axios.put("https://vetcare-1.onrender.com/profile", formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -18,12 +18,12 @@ const Profile = ({ onLogout }) => {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await axios.get("http://localhost:5001/profile", {
+        const res = await axios.get("https://vetcare-1.onrender.com/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         setUser(res.data);
-        setLoading(false);     // ✅ FIX #1 — allow page to show
+        setLoading(false);     // allow page to show
       } catch (err) {
         console.error("Profile fetch error:", err);
         navigate("/login");     // redirect only on 401

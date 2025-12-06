@@ -12,7 +12,7 @@ const Notifications = () => {
   useEffect(() => {
     const fetchReminders = async () => {
       try {
-        const res = await axios.get("http://localhost:5001/api/reminders/today");
+        const res = await axios.get("https://vetcare-1.onrender.com/api/reminders/today");
         setAnimals(res.data || []);
       } catch (err) {
         console.error("Reminder fetch error:", err);

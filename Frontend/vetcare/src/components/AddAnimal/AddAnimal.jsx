@@ -89,7 +89,7 @@ const AddAnimal = () => {
         vaccineDate: formData.vaccineDate
       };
 
-      await axios.post("http://localhost:5001/api/animals", animalData);
+      await axios.post("https://vetcare-1.onrender.com/api/animals", animalData);
 
       navigate('/dashboard');
 

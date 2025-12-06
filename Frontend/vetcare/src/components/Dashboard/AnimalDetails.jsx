@@ -16,7 +16,7 @@ const AnimalDetails = () => {
 
     try {
       const res = await axios.delete(
-        `http://localhost:5001/api/animals/${id}/vaccine-history/${index}`
+        `https://vetcare-1.onrender.com/api/animals/${id}/vaccine-history/${index}`
       );
 
       setAnimal(res.data); // update UI
@@ -30,7 +30,7 @@ const AnimalDetails = () => {
   useEffect(() => {
     const fetchAnimalDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/api/animals/${id}`);
+        const response = await axios.get(`https://vetcare-1.onrender.com/api/animals/${id}`);
         setAnimal(response.data);
         setError(null);
       } catch (err) {

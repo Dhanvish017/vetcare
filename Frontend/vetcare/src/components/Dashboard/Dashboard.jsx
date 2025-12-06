@@ -39,7 +39,7 @@ const Dashboard = () => {
 
   const fetchAnimals = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/animals');
+      const response = await axios.get('https://vetcare-1.onrender.com/api/animals');
       const transformedData = response.data.map(animal => ({
         id: animal._id,
         title: animal.name,
@@ -63,7 +63,7 @@ const Dashboard = () => {
   const handleDeleteCard = async (cardId) => {
     if (window.confirm('Are you sure you want to delete this animal record?')) {
       try {
-        await axios.delete(`http://localhost:5001/api/animals/${cardId}`);
+        await axios.delete(`https://vetcare-1.onrender.com/api/animals/${cardId}`);
         setDashboardCards(dashboardCards.filter(card => card.id !== cardId));
       } catch (error) {
         console.error('Error deleting animal:', error);
