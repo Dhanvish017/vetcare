@@ -228,7 +228,28 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", async (req, r
 });
 
 // ---------------------
-app.use("/api/notify", notifyRoutes);
+// REMINDERS: VACCINE TODAY
+// ---------------------
+app.get("/api/reminders/today", async (req, res) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);       // today 00:00
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);    // today 23:59
+
+    const animals = await Animal.find({
+      "vaccineInfo.vaccineDate": { $gte: start, $lte: end },
+      "owner.phone": { $exists: true, $ne: "" }
+    });
+
+    res.json(animals);
+  } catch (err) {
+    console.error("Reminder fetch error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+  
 
 // ---------------------
 app.listen(process.env.PORT || 5001, () =>

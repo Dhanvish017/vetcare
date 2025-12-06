@@ -8,6 +8,8 @@ import EditProfile from './components/Profile/EditProfile';
 import AddAnimal from './components/AddAnimal/AddAnimal';
 import EditAnimal from './components/Dashboard/EditAnimal';
 import AnimalDetails from './components/Dashboard/AnimalDetails';
+import Notification from './components/Notifications/Notifications';
+
 import './App.css';
 
 
@@ -137,6 +139,19 @@ function App() {
         : <Navigate to="/login" />
     }
   />
+
+{/*notification route*/}
+  <Route  
+  path="/Notifications"
+  element={
+    isAuthenticated
+      ? <Notification />
+      : <Navigate to="/login" />
+  }
+/>
+
+
+
 
 </Routes>
 

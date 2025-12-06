@@ -31,6 +31,13 @@
   align-items: center;
 }
 
+.header-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-right: 10px;
+}
+
 .header-button {
   display: flex;
   align-items: center;
@@ -75,6 +82,31 @@
 }
 
 .profile-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+/* Notification Button in Header */
+.dashboard-header .notification-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin-right: 10px;
+}
+
+.dashboard-header .notification-button:hover {
   background-color: rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
   cursor: pointer;

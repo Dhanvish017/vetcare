@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
-import { FaTrash, FaUser, FaEdit } from 'react-icons/fa';
+import { FaTrash, FaUser, FaEdit, FaBell } from 'react-icons/fa';
 import axios from 'axios';
 
 
@@ -88,12 +88,22 @@ const Dashboard = () => {
           >
             <FaUser />
           </button>
-          <button 
-            className="add-animal-button"
-            onClick={() => navigate('/add-animal')}
-          >
-            +
-          </button>
+          <div className="header-action-buttons">
+            <button 
+              className="notification-button"
+              onClick={() => navigate('/Notifications')}
+              title="Notifications"
+            >
+              <FaBell />
+            </button>
+            <button 
+              className="add-animal-button"
+              onClick={() => navigate('/add-animal')}
+              title="Add Animal"
+            >
+              +
+            </button>
+          </div>
         </div>
       </header>
 
