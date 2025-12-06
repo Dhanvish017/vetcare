@@ -121,7 +121,6 @@ const AnimalDetails = () => {
             </tbody>
           </table>
         )}
-
       </div>
     </div>
   );
