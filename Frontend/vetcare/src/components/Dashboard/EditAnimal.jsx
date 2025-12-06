@@ -13,6 +13,9 @@ const EditAnimal = () => {
     breed: '',
     age: '',
     gender: '',
+    microchipNumber: '',
+    registeredClubName: '',
+    clubRegistrationNumber: '',
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
@@ -36,6 +39,9 @@ const EditAnimal = () => {
           breed: a.breed || "",
           age: a.age || "",
           gender: a.gender || "",
+          microchipNumber: a.microchipNumber || "",
+          registeredClubName: a.registeredClubName || "",
+          clubRegistrationNumber: a.clubRegistrationNumber || "",
           ownerName: a.owner?.name || "",
           ownerEmail: a.owner?.email || "",
           ownerPhone: a.owner?.phone || "",
@@ -69,6 +75,13 @@ const EditAnimal = () => {
     }));
   };
 
+  const vaccineOptions = {
+    dog: ["DHHPPi+RL", "DHPPi+L", "Puppy DP", "Antirabies"],
+    cat: ["Tricat+rabies Vaccine", "Tricat Vacc", "Rabies"],
+  };
+
+  const vaccineList = vaccineOptions[formData.species] || [];
+
   // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,19 +91,23 @@ const EditAnimal = () => {
         name: formData.animalName,
         species: formData.species,
         breed: formData.breed,
-        age: parseInt(formData.age) || 0,
+        age: formData.age ? parseInt(formData.age) : 0,
         gender: formData.gender,
+        microchipNumber: formData.microchipNumber,
+        registeredClubName: formData.registeredClubName,
+        clubRegistrationNumber: formData.clubRegistrationNumber,
         owner: {
           name: formData.ownerName,
           email: formData.ownerEmail,
           phone: formData.ownerPhone,
           address: formData.address
         },
-
-        vaccineType: formData.vaccineType,
-        vaccineBrand: formData.vaccineBrand,
-        vaccineStatus: formData.vaccineStatus,
-        vaccineDate: formData.vaccineDate
+        vaccineInfo: {
+          type: formData.vaccineType,
+          brand: formData.vaccineBrand,
+          status: formData.vaccineStatus,
+          date: formData.vaccineDate
+        }
       };
 
       await axios.put(`http://localhost:5001/api/animals/${id}`, updated);
@@ -141,9 +158,6 @@ const EditAnimal = () => {
                     <option value="">Select Species</option>
                     <option value="dog">Dog</option>
                     <option value="cat">Cat</option>
-                    <option value="bird">Bird</option>
-                    <option value="rabbit">Rabbit</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
 
@@ -153,6 +167,42 @@ const EditAnimal = () => {
                 </div>
               </div>
 
+{/* Registration Information */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Microchip Number</label>
+                  <input
+                    type="text"
+                    name="microchipNumber"
+                    value={formData.microchipNumber}
+                    onChange={handleChange}
+                    placeholder="Enter microchip number"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Registered Club Name</label>
+                  <input
+                    type="text"
+                    name="registeredClubName"
+                    value={formData.registeredClubName}
+                    onChange={handleChange}
+                    placeholder="Enter club name"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Club Registration Number</label>
+                  <input
+                    type="text"
+                    name="clubRegistrationNumber"
+                    value={formData.clubRegistrationNumber}
+                    onChange={handleChange}
+                    placeholder="Enter registration number"
+                  />
+                </div>
+              </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Age</label>
@@ -232,37 +282,51 @@ const EditAnimal = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>Vaccine Type</label>
-                  <select name="vaccineType" value={formData.vaccineType} onChange={handleChange}>
-                    <option value="">Select Type</option>
-                    <option value="rabies">Rabies</option>
-                    <option value="distemper">Distemper</option>
-                    <option value="parvovirus">Parvovirus</option>
-                    <option value="bordetella">Bordetella</option>
-                    <option value="leptospirosis">Leptospirosis</option>
+                  <select
+                    name="vaccineType"
+                    value={formData.vaccineType}
+                    onChange={handleChange}
+                    disabled={!formData.species}  // Prevent selecting before choosing species
+                  >
+                    <option value="">Select Vaccine</option>
+
+                    {vaccineList.map((vaccine, index) => (
+                      <option key={index} value={vaccine.toLowerCase()}>
+                        {vaccine}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Brand</label>
-                  <select name="vaccineBrand" value={formData.vaccineBrand} onChange={handleChange}>
-                    <option value="">Select Brand</option>
-                    <option value="nobivac">Nobivac</option>
-                    <option value="vanguard">Vanguard</option>
-                    <option value="defensor">Defensor</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+  <label>Deworming</label>
+
+  <input
+    list="dewormingOptions"
+    name="deworming"
+    value={formData.deworming}
+    onChange={handleChange}
+    placeholder="Select or type deworming"
+  />
+
+  <datalist id="dewormingOptions">
+    <option value="Pyrental pamate" />
+    <option value="Fenbendazole" />
+    <option value="Ivermectin oral" />
+  </datalist>
+</div>
+
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Status</label>
                   <select name="vaccineStatus" value={formData.vaccineStatus} onChange={handleChange}>
-                    <option value="">Select Status</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="administered">Administered</option>
-                    <option value="due">Due</option>
-                    <option value="overdue">Overdue</option>
+                    <option value="">Stage</option>
+                    <option value="scheduled">Primary</option>
+                    <option value="administered">Booster</option>
+                    <option value="due">2nd Booster</option>
+                    <option value="overdue">Annual</option>
                   </select>
                 </div>
 

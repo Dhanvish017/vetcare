@@ -11,6 +11,9 @@ const AddAnimal = () => {
     breed: '',
     age: '',
     gender: '',
+    microchipNumber: '',
+    registeredClubName: '',
+    clubRegistrationNumber: '',
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
@@ -21,6 +24,7 @@ const AddAnimal = () => {
     vaccineDate: ''
   });
 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -30,23 +34,30 @@ const AddAnimal = () => {
   };
 
   const handleDaysChange = (e) => {
-  const days = e.target.value;
+    const days = e.target.value;
 
-  setFormData(prev => {
-    let nextDate = "";
-    if (days) {
-      const date = new Date();
-      date.setDate(date.getDate() + parseInt(days));
-      nextDate = date.toISOString().split("T")[0];
-    }
+    setFormData(prev => {
+      let nextDate = "";
+      if (days) {
+        const date = new Date();
+        date.setDate(date.getDate() + parseInt(days));
+        nextDate = date.toISOString().split("T")[0];
+      }
 
-    return {
-      ...prev,
-      daysUntilNext: days,
-      vaccineDate: nextDate
-    };
-  });
-};
+      return {
+        ...prev,
+        daysUntilNext: days,
+        vaccineDate: nextDate
+      };
+    });
+  };
+
+  const vaccineOptions = {
+    dog: ["DHHPPi+RL", "DHPPi+L", "Puppy DP", "Antirabies"],
+    cat: ["Tricat+rabies Vaccine", "Tricat Vacc", "Rabies"],
+  };
+
+  const vaccineList = vaccineOptions[formData.species] || [];
 
 
   const handleSubmit = async (e) => {
@@ -60,6 +71,9 @@ const AddAnimal = () => {
         breed: formData.breed,
         age: formData.age ? parseInt(formData.age) : 0,
         gender: formData.gender,
+        microchipNumber: formData.microchipNumber,
+        registeredClubName: formData.registeredClubName,
+        clubRegistrationNumber: formData.clubRegistrationNumber,
 
         owner: {
           name: formData.ownerName,
@@ -70,7 +84,7 @@ const AddAnimal = () => {
 
         // SEND THESE FIELDS EXACTLY AS BACKEND EXPECTS
         vaccineType: formData.vaccineType,
-        deworming: formData.de,
+        deworming: formData.deworming,
         vaccineStatus: formData.vaccineStatus,
         vaccineDate: formData.vaccineDate
       };
@@ -115,24 +129,24 @@ const AddAnimal = () => {
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Species*</label>
+              <div className="form-group">
+                <label>Species *</label>
+                <div className="select-wrapper">
                   <select
-                    name="species"
+                    id="species"
                     value={formData.species}
                     onChange={handleChange}
+                    name="species"
                     required
                   >
                     <option value="">Select Species</option>
                     <option value="dog">Dog</option>
                     <option value="cat">Cat</option>
-                    <option value="bird">Bird</option>
-                    <option value="rabbit">Rabbit</option>
-                    <option value="other">Other</option>
                   </select>
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
                   <label>Breed</label>
                   <input
@@ -140,6 +154,43 @@ const AddAnimal = () => {
                     name="breed"
                     value={formData.breed}
                     onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Registration Information */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Microchip Number</label>
+                  <input
+                    type="text"
+                    name="microchipNumber"
+                    value={formData.microchipNumber}
+                    onChange={handleChange}
+                    placeholder="Enter microchip number"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Registered Club Name</label>
+                  <input
+                    type="text"
+                    name="registeredClubName"
+                    value={formData.registeredClubName}
+                    onChange={handleChange}
+                    placeholder="Enter club name"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Club Registration Number</label>
+                  <input
+                    type="text"
+                    name="clubRegistrationNumber"
+                    value={formData.clubRegistrationNumber}
+                    onChange={handleChange}
+                    placeholder="Enter registration number"
                   />
                 </div>
               </div>
@@ -232,30 +283,37 @@ const AddAnimal = () => {
                     name="vaccineType"
                     value={formData.vaccineType}
                     onChange={handleChange}
+                    disabled={!formData.species}  // Prevent selecting before choosing species
                   >
-                    <option value="">Select Type</option>
-                    <option value="rabies">Rabies</option>
-                    <option value="distemper">Distemper</option>
-                    <option value="parvovirus">Parvovirus</option>
-                    <option value="bordetella">Bordetella</option>
-                    <option value="leptospirosis">Leptospirosis</option>
+                    <option value="">Select Vaccine</option>
+
+                    {vaccineList.map((vaccine, index) => (
+                      <option key={index} value={vaccine.toLowerCase()}>
+                        {vaccine}
+                      </option>
+                    ))}
                   </select>
+
                 </div>
 
-                <div className="form-group">
-                  <label>Deworming</label>
-                  <select
-                    name="deworming"
-                    value={formData.deworming}
-                    onChange={handleChange}
-                  >
-                    <option value="">stage of deworming</option>
-                    <option value="nobivac">Nobivac</option>
-                    <option value="vanguard">Vanguard</option>
-                    <option value="defensor">Defensor</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+<div className="form-group">
+  <label>Deworming</label>
+
+  <input
+    list="dewormingOptions"
+    name="deworming"
+    value={formData.deworming}
+    onChange={handleChange}
+    placeholder="Select or type deworming"
+  />
+
+  <datalist id="dewormingOptions">
+    <option value="Pyrental pamate" />
+    <option value="Fenbendazole" />
+    <option value="Ivermectin oral" />
+  </datalist>
+</div>
+
               </div>
 
               <div className="form-row">
@@ -266,34 +324,34 @@ const AddAnimal = () => {
                     value={formData.vaccineStatus}
                     onChange={handleChange}
                   >
-                    <option value="">Select Status</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="administered">Administered</option>
-                    <option value="due">Due</option>
-                    <option value="overdue">Overdue</option>
+                    <option value="">Stage</option>
+                    <option value="scheduled">Primary</option>
+                    <option value="administered">Booster</option>
+                    <option value="due">2nd Booster</option>
+                    <option value="overdue">Annual</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-  <label>Next Vaccine After (Days)</label>
-  <input
-    type="number"
-    name="daysUntilNext"
-    value={formData.daysUntilNext || ""}
-    onChange={(e) => handleDaysChange(e)}
-    min="1"
-    placeholder="Enter days"
-  />
-</div>
+                  <label>Next Vaccine After (Days)</label>
+                  <input
+                    type="number"
+                    name="daysUntilNext"
+                    value={formData.daysUntilNext || ""}
+                    onChange={(e) => handleDaysChange(e)}
+                    min="1"
+                    placeholder="Enter days"
+                  />
+                </div>
 
-<div className="form-group">
-  <label>Predicted Next Vaccine Date</label>
-  <input
-    type="date"
-    value={formData.vaccineDate || ""}
-    readOnly
-  />
-</div>
+                <div className="form-group">
+                  <label>Predicted Next Vaccine Date</label>
+                  <input
+                    type="date"
+                    value={formData.vaccineDate || ""}
+                    readOnly
+                  />
+                </div>
 
               </div>
             </div>

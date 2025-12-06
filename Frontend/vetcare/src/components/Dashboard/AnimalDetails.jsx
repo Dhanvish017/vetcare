@@ -63,6 +63,9 @@ const AnimalDetails = () => {
         <div className="details-grid">
           <div className="detail-item"><span className="detail-label">Species:</span> {animal.species}</div>
           <div className="detail-item"><span className="detail-label">Breed:</span> {animal.breed}</div>
+          <div className="detail-item"><span className="detail-label">microchipNumber:</span> {animal.microchipNumber}</div>
+          <div className="detail-item"><span className="detail-label">registeredClubName:</span> {animal.registeredClubName}</div>
+          <div className="detail-item"><span className="detail-label">clubRegistrationNumber:</span> {animal.clubRegistrationNumber}</div>
           <div className="detail-item"><span className="detail-label">Age:</span> {animal.age} years</div>
           <div className="detail-item"><span className="detail-label">Gender:</span> {animal.gender}</div>
         </div>

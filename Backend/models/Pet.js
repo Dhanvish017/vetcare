@@ -6,7 +6,7 @@ const animalSchema = new mongoose.Schema({
     species: {
         type: String,
         required: true,
-        enum: ['dog', 'cat', 'bird', 'rabbit', 'other']
+        enum: ['dog', 'cat']
     },
 
     breed: String,
@@ -16,6 +16,25 @@ const animalSchema = new mongoose.Schema({
         type: String, 
         enum: ['male', 'female', 'unknown'] 
     },
+
+    microchipNumber: {
+  type: String,
+  required: false,
+  trim: true
+},
+
+registeredClubName: {
+  type: String,
+  required: false,
+  trim: true
+},
+
+clubRegistrationNumber: {
+  type: String,
+  required: false,
+  trim: true
+},
+
 
     owner: {
         name: String,
