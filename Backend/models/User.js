@@ -1,29 +1,26 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-
     name: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
     },
 
     email: {
         type: String,
         required: true,
         unique: true,
-        lowercase: true
+        lowercase: true,
     },
 
     password: {
         type: String,
         required: true,
         minlength: 6,
-        select: false
+        select: false,
     },
 
-    // ✔ NEW FIELDS FOR PROFILE
     specialization: { type: String, default: "" },
     phone: { type: String, default: "" },
     address: { type: String, default: "" },
@@ -31,21 +28,23 @@ const userSchema = new mongoose.Schema({
 
     role: {
         type: String,
-        enum: ['user', 'admin'],
-        default: 'user'
+        enum: ["user", "admin"],
+        default: "user",
     },
 
     createdAt: {
         type: Date,
-        default: Date.now
-    }
+        default: Date.now,
+    },
 });
 
-// ✔ Hash password before saving (in signup)
-userSchema.pre("save", async function (next) {
+module.exports = mongoose.model("User", userSchema);
+
+
+// Hash password before saving (in signup)
+/*userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 10);
     next();
-});
+});*/
 
-module.exports = mongoose.model('User', userSchema);
