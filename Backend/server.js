@@ -27,8 +27,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 const notifyRoutes = require("./routes/notify");
 app.use("/api/notify", notifyRoutes);
 
