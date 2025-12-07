@@ -58,9 +58,10 @@ const Signup = () => {
      
       
     } catch (err) {
-      console.error("Signup failed:", err);
-      setError("Signup failed. Try again.");
-    }
+  console.error("Signup ERROR:", err);
+  res.status(500).json({ message: "Server error", error: err.message });
+}
+
   };
 
   return (
