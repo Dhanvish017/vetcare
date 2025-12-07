@@ -39,11 +39,19 @@ const Signup = () => {
       console.log("Signup attempt:", formData);
 
       // Example API call (you can modify backend route)
-      await axios.post("https://vetcare-1.onrender.com/signup", {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      }
+     await axios.post(
+  "https://vetcare-1.onrender.com/signup",
+  {
+    name: formData.name,
+    email: formData.email,
+    password: formData.password,
+  },
+  {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }
+
     );
      navigate("/login");        
     alert("Signup successful! please login");
