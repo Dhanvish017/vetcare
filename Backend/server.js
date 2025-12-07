@@ -63,9 +63,7 @@ app.post("/signup", async (req, res) => {
     if (exists)
       return res.status(400).json({ message: "Email already exists" });
 
-    const hashed = await bcrypt.hash(password, 10);
-
-    await User.create({ name, email, password: hashed });
+    await User.create({ name, email, password });
 
     res.status(201).json({ message: "Signup successful" });
 
