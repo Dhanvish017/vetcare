@@ -19,7 +19,7 @@ app.use(
       "http://localhost:5173"        // for local dev (Vite)
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization","timeout"],
   })
 );
 
