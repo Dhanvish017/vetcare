@@ -23,8 +23,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 
 const cron = require("node-cron");
 
@@ -102,7 +100,7 @@ app.get("/profile", protect, async (req, res) => {
   res.json(req.user);
 });
 
-// ---------------------
+// --------------------- 
 // PROFILE UPDATE
 // ---------------------
 app.put("/profile", protect, async (req, res) => {
