@@ -3,6 +3,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const app = express();
+
 const User = require("./models/User");
 const Animal = require("./models/Pet");
 const { protect } = require("./middleware/auth");
@@ -10,7 +12,8 @@ const { protect } = require("./middleware/auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const app = express();
+
+
 app.use(express.json());
 app.use(
   cors({
@@ -19,9 +22,12 @@ app.use(
       "http://localhost:5173"        // for local dev (Vite)
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization","timeout"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials:true,
   })
 );
+
+app.options("*", cors());
 
 const notifyRoutes = require("./routes/notify");
 app.use("/api/notify", notifyRoutes);

@@ -46,11 +46,12 @@ const Signup = () => {
     email: formData.email,
     password: formData.password,
   },
+
   {
+    timeout: 5000,   
     headers: {
-      "Content-Type": "application/json",
-      timeout: 5000,
-    },
+      "Content-Type": "application/json" 
+    }
   }
 
     );
