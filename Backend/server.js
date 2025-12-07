@@ -23,9 +23,11 @@ app.use(
   })
 );
 
-const cron = require("node-cron");
-
 const notifyRoutes = require("./routes/notify");
+app.use("/api/notify", notifyRoutes);
+
+
+const cron = require("node-cron");
 
 // ---------------------
 // DATABASE CONNECTION
