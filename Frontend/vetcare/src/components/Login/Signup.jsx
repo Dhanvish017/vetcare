@@ -39,8 +39,7 @@ const Signup = () => {
       console.log("Signup attempt:", formData);
 
       // Example API call (you can modify backend route)
-     await axios.post(
-  "https://vetcare-1.onrender.com/signup",
+     await axios.post("https://vetcare-1.onrender.com/signup",
   {
     name: formData.name,
     email: formData.email,
@@ -59,8 +58,8 @@ const Signup = () => {
      
       
     } catch (err) {
-  console.error("Signup ERROR:", err);
-  setError("Signup failed. Try again.");
+  console.error("Signup ERROR:", err.response?.data || err);
+  setError(err.response?.data?.message || "Signup failed. Try again.");
 }
 
   };

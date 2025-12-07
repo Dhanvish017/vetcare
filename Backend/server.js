@@ -52,6 +52,8 @@ app.get("/", (req, res) => {
 // ---------------------
 app.post("/signup", async (req, res) => {
   try {
+    console.log("SIGNUP REQUEST BODY:", req.body);
+
     const { name, email, password } = req.body;
 
     if (!name || !email || !password)
@@ -66,10 +68,13 @@ app.post("/signup", async (req, res) => {
     await User.create({ name, email, password: hashed });
 
     res.status(201).json({ message: "Signup successful" });
+
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("SIGNUP SERVER ERROR:", err);  // <-- FULL ERROR HERE
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 });
+
 
 // ---------------------
 // LOGIN
@@ -93,7 +98,7 @@ app.post("/login", async (req, res) => {
 
     res.json({ message: "Success", token });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+   res.status(500).json({ message: "Server error" });
   }
 });
 
