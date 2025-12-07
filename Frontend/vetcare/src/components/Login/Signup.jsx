@@ -40,7 +40,7 @@ const Signup = () => {
 
       // Example API call (you can modify backend route)
      await axios.post(
-  "https://vetcare-1.onrender.com/signup/",
+  "https://vetcare-1.onrender.com/signup",
   {
     name: formData.name,
     email: formData.email,
