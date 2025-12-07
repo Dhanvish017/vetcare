@@ -12,7 +12,19 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://vetcare.vercel.app",  // your frontend URL (update if different)
+      "http://localhost:5173"        // for local dev (Vite)
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.options("*", cors());
+
 
 const cron = require("node-cron");
 
