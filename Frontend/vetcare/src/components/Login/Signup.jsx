@@ -40,7 +40,7 @@ const Signup = () => {
 
       // Example API call (you can modify backend route)
      await axios.post(
-  "https://vetcare-1.onrender.com/signup",
+  "https://vetcare-1.onrender.com/signup/",
   {
     name: formData.name,
     email: formData.email,
@@ -49,6 +49,7 @@ const Signup = () => {
   {
     headers: {
       "Content-Type": "application/json",
+      timeout: 5000,
     },
   }
 
@@ -59,7 +60,7 @@ const Signup = () => {
       
     } catch (err) {
   console.error("Signup ERROR:", err);
-  res.status(500).json({ message: "Server error", error: err.message });
+  setError("Signup failed. Try again.");
 }
 
   };
