@@ -89,7 +89,18 @@ const AddAnimal = () => {
         vaccineDate: formData.vaccineDate
       };
 
-      await axios.post("https://vetcare-1.onrender.com/api/animals", animalData);
+       
+    //only one user
+      await axios.post(
+  "https://vetcare-1.onrender.com/api/animals",
+  animalData,
+  {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  }
+);
+
 
       navigate('/dashboard');
 
@@ -296,23 +307,23 @@ const AddAnimal = () => {
 
                 </div>
 
-<div className="form-group">
-  <label>Deworming</label>
+                <div className="form-group">
+                  <label>Deworming</label>
 
-  <input
-    list="dewormingOptions"
-    name="deworming"
-    value={formData.deworming}
-    onChange={handleChange}
-    placeholder="Select or type deworming"
-  />
+                  <input
+                    list="dewormingOptions"
+                    name="deworming"
+                    value={formData.deworming}
+                    onChange={handleChange}
+                    placeholder="Select or type deworming"
+                  />
 
-  <datalist id="dewormingOptions">
-    <option value="Pyrental pamate" />
-    <option value="Fenbendazole" />
-    <option value="Ivermectin oral" />
-  </datalist>
-</div>
+                  <datalist id="dewormingOptions">
+                    <option value="Pyrental pamate" />
+                    <option value="Fenbendazole" />
+                    <option value="Ivermectin oral" />
+                  </datalist>
+                </div>
 
               </div>
 

@@ -30,7 +30,15 @@ const EditAnimal = () => {
   useEffect(() => {
     const fetchAnimal = async () => {
       try {
-        const res = await axios.get(`https://vetcare-1.onrender.com/api/animals/${id}`);
+        const res = await axios.get(
+  `https://vetcare-1.onrender.com/api/animals/${id}`,
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  }
+);
+
         const a = res.data;
 
         setFormData({
@@ -110,7 +118,16 @@ const EditAnimal = () => {
         }
       };
 
-      await axios.put(`https://vetcare-1.onrender.com/api/animals/${id}`, updated);
+     await axios.put(
+  `https://vetcare-1.onrender.com/api/animals/${id}`,
+  updated,
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  }
+);
+
 
       navigate("/dashboard");
     } catch (error) {

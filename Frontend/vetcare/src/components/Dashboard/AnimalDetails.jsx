@@ -30,8 +30,16 @@ const AnimalDetails = () => {
   useEffect(() => {
     const fetchAnimalDetails = async () => {
       try {
-        const response = await axios.get(`https://vetcare-1.onrender.com/api/animals/${id}`);
-        setAnimal(response.data);
+        const res = await axios.get(
+  `https://vetcare-1.onrender.com/api/animals/${id}`,
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  }
+);
+
+        setAnimal(res.data);
         setError(null);
       } catch (err) {
         console.error('Error fetching animal details:', err);

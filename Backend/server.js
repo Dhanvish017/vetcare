@@ -127,10 +127,11 @@ app.put("/profile", protect, async (req, res) => {
 // ---------------------
 // ADD ANIMAL
 // ---------------------
-app.post("/api/animals", async (req, res) => {
+app.post("/api/animals", protect, async (req, res) => {
   try {
     const animal = new Animal({
       ...req.body,
+      user: req.user.id,//specific user id
       vaccineInfo: {
         vaccineType: req.body.vaccineType,
         vaccineBrand: req.body.vaccineBrand,
@@ -161,15 +162,26 @@ app.post("/api/animals", async (req, res) => {
 // ---------------------
 // GET ALL ANIMALS
 // ---------------------
-app.get("/api/animals", async (req, res) => {
-  res.json(await Animal.find());
+app.get("/api/animals", protect, async (req, res) => {
+  try {
+    const animals = await Animal.find({ user: req.user.id });
+    res.json(animals);
+  } catch (err) {
+    console.error("FETCH ANIMALS ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch animals" });
+  }
 });
+
+
 
 // ---------------------
 // GET ANIMAL BY ID
 // ---------------------
-app.get("/api/animals/:id", async (req, res) => {
-  const animal = await Animal.findById(req.params.id);
+app.get("/api/animals/:id",protect, async (req, res) => {
+  const animal = await Animal.findOne({ 
+    _id: req.params.id,
+    user: req.user.id 
+  });
   if (!animal) return res.status(404).json({ message: "Not found" });
   res.json(animal);
 });
@@ -177,9 +189,12 @@ app.get("/api/animals/:id", async (req, res) => {
 // ---------------------
 // UPDATE ANIMAL
 // ---------------------
-app.put("/api/animals/:id", async (req, res) => {
+app.put("/api/animals/:id",protect, async (req, res) => {
   try {
-    const animal = await Animal.findById(req.params.id);
+    const animal = await Animal.findOne({ 
+      _id: req.params.id,
+      user: req.user.id 
+    });
     if (!animal) return res.status(404).json({ message: "Not found" });
 
     // update vaccine info
@@ -212,9 +227,12 @@ app.put("/api/animals/:id", async (req, res) => {
 // ---------------------
 // DELETE ANIMAL
 // ---------------------
-app.delete("/api/animals/:id", async (req, res) => {
+app.delete("/api/animals/:id",protect, async (req, res) => {
   try {
-    const deleted = await Animal.findByIdAndDelete(req.params.id);
+    const deleted = await Animal.findOneAndDelete({ 
+      _id: req.params.id,
+      user: req.user.id 
+    });
 
     if (!deleted) {
       return res.status(404).json({ message: "Animal not found" });
@@ -227,11 +245,14 @@ app.delete("/api/animals/:id", async (req, res) => {
 });
 
 // DELETE SINGLE VACCINE HISTORY ENTRY
-app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", async (req, res) => {
+app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async (req, res) => {
   try {
     const { animalId, historyIndex } = req.params;
 
-    const animal = await Animal.findById(animalId);
+    const animal = await Animal.findOne({ 
+      _id: animalId,
+      user: req.user.id 
+    });
     if (!animal) return res.status(404).json({ message: "Animal not found" });
 
     // remove one history entry
@@ -249,7 +270,7 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", async (req, r
 // ---------------------
 // REMINDERS: VACCINE TODAY
 // ---------------------
-app.get("/api/reminders/today", async (req, res) => {
+app.get("/api/reminders/today",protect, async (req, res) => {
   try {
     const start = new Date();
     start.setHours(0, 0, 0, 0);       // today 00:00
