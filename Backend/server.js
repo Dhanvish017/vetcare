@@ -14,6 +14,7 @@ const jwt = require("jsonwebtoken");
 
 
 
+
 app.use(express.json());
 app.use(
   cors({
@@ -289,6 +290,39 @@ app.get("/api/reminders/today",protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// ---------------------
+// UPDATE VACCINE STATUS
+// ---------------------
+app.patch("/api/animals/:id", protect, async (req, res) => {
+  try {
+    const { vaccineStatus } = req.body;
+
+    const animal = await Animal.findById(req.params.id);
+    if (!animal) {
+      return res.status(404).json({ message: "Animal not found" });
+    }
+
+    // ensure vaccineInfo exists (check box)
+    if (!animal.vaccineInfo) {
+      animal.vaccineInfo = {};
+    }
+
+    animal.vaccineInfo.vaccineStatus = vaccineStatus;
+
+    await animal.save();
+
+    res.json({
+      success: true,
+      message: "Vaccine status updated",
+      animal
+    });
+  } catch (err) {
+    console.error("Update vaccine error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
   
 
 // ---------------------
