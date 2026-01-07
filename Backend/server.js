@@ -130,35 +130,18 @@ app.put("/profile", protect, async (req, res) => {
 // ---------------------
 app.post("/api/animals", protect, async (req, res) => {
   try {
-    const animal = new Animal({
-      ...req.body,
-      user: req.user.id,//specific user id
-      vaccineInfo: {
-        vaccineType: req.body.vaccineType,
-        vaccineBrand: req.body.vaccineBrand,
-        vaccineStatus: req.body.vaccineStatus,
-        vaccineDate: req.body.vaccineDate
-      },
-
-      vaccineHistory:
-        req.body.vaccineStatus === "administered"
-          ? [
-              {
-                vaccineType: req.body.vaccineType,
-                vaccineBrand: req.body.vaccineBrand,
-                status: req.body.vaccineStatus,
-                date: req.body.vaccineDate || new Date(),
-              },
-            ]
-          : [],
+    const animal = await Animal.create({
+      ...req.body,        // includes vaccineInfo, owner, etc.
+      user: req.user.id,  // enforce logged-in user ownership
     });
 
-    await animal.save();
     res.status(201).json(animal);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Add animal error:", err);
+    res.status(400).json({ message: err.message });
   }
 });
+
 
 // ---------------------
 // GET ALL ANIMALS
