@@ -1,92 +1,110 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const animalSchema = new mongoose.Schema({
-    name: { type: String, required: true, trim: true },
+const animalSchema = new mongoose.Schema(
+  {
+    //USER (MULTI-TENANCY)
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
+    //BASIC INFO
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     species: {
-        type: String,
-        required: true,
-        enum: ['dog', 'cat']
+      type: String,
+      enum: ["dog", "cat"],
+      required: true,
     },
 
-    breed: String,
-    age: Number,
-
-    gender: { 
-        type: String, 
-        enum: ['male', 'female', 'unknown'] 
+    breed: {
+      type: String,
+      trim: true,
     },
 
-    microchipNumber: {
-  type: String,
-  required: false,
-  trim: true
-},
+    dob: {
+      type: Date,
+    },
 
-registeredClubName: {
-  type: String,
-  required: false,
-  trim: true
-},
+    age: {
+      type: Number, // years (derived from DOB)
+    },
 
-clubRegistrationNumber: {
-  type: String,
-  required: false,
-  trim: true
-},
+    gender: {
+      type: String,
+      enum: ["male", "female", "unknown"],
+      default: "unknown",
+    },
 
-
+    // OWNER INFO
     owner: {
-        name: String,
-        email: String,
-        phone: String,
-        address: String
+      name: { type: String, trim: true },
+      email: { type: String, trim: true },
+      phone: { type: String, trim: true },
+      address: { type: String, trim: true },
     },
 
-    medicalHistory: [{
-        date: { type: Date, default: Date.now },
-        diagnosis: String,
-        treatment: String,
-        notes: String,
-        veterinarian: String
-    }],
-
-    vaccinations: [{
-        name: String,
-        date: Date,
-        nextDue: Date,
-        notes: String
-    }],
-
+    // VACCINE INFO (CURRENT / UPCOMING)
     vaccineInfo: {
-  type: {
-    vaccineType: String,     // rabies, distemper, etc.
-    deworming: String,    // nobivac, vanguard...
-    vaccineStatus: String,   // scheduled, administered, due, overdue
-    vaccineDate: Date        // chosen date
+      vaccineType: {
+        type: String, // DHHPPi+RL, Tricat, Rabies, etc.
+        trim: true,
+      },
+
+      stage: {
+        type: String,
+        enum: ["Primary", "Booster", "2nd Booster", "Annual"],
+      },
+
+      vaccineStatus: {
+        type: String,
+        enum: ["pending", "completed"],
+        default: "pending",
+      },
+
+      vaccineDate: {
+        type: Date,
+      },
+
+      nextVaccineDate: {
+        type: Date,
+      },
+
+      //DEWORMING
+      dewormingName: {
+        type: String, // Pyrantel pamate, Fenbendazole, custom
+        trim: true,
+      },
+
+      nextDewormingDate: {
+        type: Date,
+      },
+    },
+
+    // VACCINE HISTORY
+    vaccineHistory: [
+      {
+        vaccineType: String,
+        stage: String,
+        status: String,
+        date: Date,
+        dewormingName: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
-  default: {}
-},
+  { timestamps: true }
+);
 
-vaccineHistory: [
-  {
-    vaccineType: String,
-    deworming: String,
-    status: String,
-    date: Date,
-    createdAt: { type: Date, default: Date.now }
-  }
-],
+module.exports = mongoose.model("Animal", animalSchema);
 
-user: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "User",
-  required: true
-}
-
-
-
-}, { timestamps: true });
-
-module.exports = mongoose.model('Animal', animalSchema);
 
