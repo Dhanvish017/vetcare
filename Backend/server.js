@@ -450,27 +450,28 @@ app.get("/api/dashboard/vaccine-stats", protect, async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // ✅ Pending vaccines today
+    // 🟡 Pending today (from vaccineInfo)
     const pending = await Animal.countDocuments({
       user: req.user.id,
       "vaccineInfo.vaccineDate": { $gte: start, $lte: end },
       "vaccineInfo.vaccineStatus": "pending",
     });
 
-    // ✅ Completed vaccines today (from history)
-    const completed = await Animal.countDocuments({
-      user: req.user.id,
-      vaccineHistory: {
-        $elemMatch: {
-          date: { $gte: start, $lte: end },
-          status: "completed",
+    // 🟢 Completed today (from history)
+    const completedAgg = await Animal.aggregate([
+      { $match: { user: req.user.id } },
+      { $unwind: "$vaccineHistory" },
+      {
+        $match: {
+          "vaccineHistory.date": { $gte: start, $lte: end },
         },
       },
-    });
+      { $count: "count" },
+    ]);
 
     res.json({
       pendingToday: pending,
-      completedToday: completed,
+      completedToday: completedAgg[0]?.count || 0,
     });
   } catch (err) {
     console.error("Dashboard stats error:", err);
