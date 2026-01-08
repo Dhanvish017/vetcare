@@ -75,9 +75,6 @@ const animalSchema = new mongoose.Schema(
         default: "pending",
       },
 
-      vaccineDate: {
-        type: Date, // calculated from daysUntilNext
-      },
 
       nextVaccineDate: {
         type: Date,
