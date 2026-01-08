@@ -126,7 +126,7 @@ app.put("/profile", protect, async (req, res) => {
 });
 
 // ---------------------
-// ADD ANIMAL
+// ADD ANIMAL INFO
 // ---------------------
 app.post("/api/animals", protect, async (req, res) => {
   try {
@@ -141,6 +141,75 @@ app.post("/api/animals", protect, async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+
+// ---------------------
+// ADD ANIMAL ACTIVITIES
+// ---------------------
+app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
+  try {
+    const animal = await Animal.findOne({
+      _id: req.params.animalId,
+      user: req.user.id,
+    });
+
+    if (!animal) {
+      return res.status(404).json({ message: "Animal not found" });
+    }
+
+    /* =====================
+       💉 VACCINE
+       ===================== */
+    if (req.body.vaccineInfo) {
+      // push old data to history BEFORE overwrite
+      if (animal.vaccineInfo?.vaccineType) {
+        animal.vaccineHistory.push({
+          vaccineType: animal.vaccineInfo.vaccineType,
+          stage: animal.vaccineInfo.stage,
+          status: animal.vaccineInfo.vaccineStatus,
+          date: animal.vaccineInfo.vaccineDate,
+        });
+      }
+
+      animal.vaccineInfo = req.body.vaccineInfo;
+    }
+
+    /* =====================
+       🪱 DEWORMING
+       ===================== */
+    if (req.body.dewormingInfo) {
+      if (animal.dewormingInfo?.dewormingName) {
+        animal.dewormingHistory.push({
+          dewormingName: animal.dewormingInfo.dewormingName,
+          date: animal.dewormingInfo.nextDewormingDate,
+        });
+      }
+
+      animal.dewormingInfo = req.body.dewormingInfo;
+    }
+
+    /* =====================
+       ❤️ HEALTH CHECKUP
+       ===================== */
+    if (req.body.healthCheckupInfo) {
+      if (animal.healthCheckupInfo?.lastCheckupDate) {
+        animal.healthCheckupHistory.push({
+          date: animal.healthCheckupInfo.lastCheckupDate,
+        });
+      }
+
+      animal.healthCheckupInfo = req.body.healthCheckupInfo;
+    }
+
+    await animal.save();
+    res.json(animal);
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+
 
 
 // ---------------------

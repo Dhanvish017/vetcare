@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const animalSchema = new mongoose.Schema(
   {
-    // 🔐 USER (MULTI-TENANCY)
+    //USER (MULTI-TENANCY)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
