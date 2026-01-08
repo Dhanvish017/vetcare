@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const animalSchema = new mongoose.Schema(
   {
-    //USER (MULTI-TENANCY)
+    // 🔐 USER (MULTI-TENANCY)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -10,7 +10,7 @@ const animalSchema = new mongoose.Schema(
       index: true,
     },
 
-    //BASIC INFO
+    // 🐾 BASIC ANIMAL INFO
     name: {
       type: String,
       required: true,
@@ -33,7 +33,7 @@ const animalSchema = new mongoose.Schema(
     },
 
     age: {
-      type: Number, // years (derived from DOB)
+      type: Number, // derived from DOB (years)
     },
 
     gender: {
@@ -42,7 +42,7 @@ const animalSchema = new mongoose.Schema(
       default: "unknown",
     },
 
-    // OWNER INFO
+    // 👤 OWNER INFO
     owner: {
       name: { type: String, trim: true },
       email: { type: String, trim: true },
@@ -50,8 +50,15 @@ const animalSchema = new mongoose.Schema(
       address: { type: String, trim: true },
     },
 
-    // VACCINE INFO (CURRENT / UPCOMING)
+    /* =========================
+       💉 VACCINE ACTIVITY
+       ========================= */
     vaccineInfo: {
+      presentVaccineType: {
+        type: String, // previously given vaccine
+        trim: true,
+      },
+
       vaccineType: {
         type: String, // DHHPPi+RL, Tricat, Rabies, etc.
         trim: true,
@@ -69,14 +76,23 @@ const animalSchema = new mongoose.Schema(
       },
 
       vaccineDate: {
-        type: Date,
+        type: Date, // calculated from daysUntilNext
       },
 
       nextVaccineDate: {
         type: Date,
       },
+    },
 
-      //DEWORMING
+    /* =========================
+       🪱 DEWORMING ACTIVITY
+       ========================= */
+    dewormingInfo: {
+      presentDewormingName: {
+        type: String,
+        trim: true,
+      },
+
       dewormingName: {
         type: String, // Pyrantel pamate, Fenbendazole, custom
         trim: true,
@@ -87,14 +103,51 @@ const animalSchema = new mongoose.Schema(
       },
     },
 
-    // VACCINE HISTORY
+    /* =========================
+       ❤️ REGULAR HEALTH CHECKUP
+       ========================= */
+    healthCheckupInfo: {
+      lastCheckupDate: {
+        type: Date,
+      },
+
+      nextCheckupDate: {
+        type: Date,
+      },
+    },
+
+    /* =========================
+       📜 ACTIVITY HISTORY
+       ========================= */
+
     vaccineHistory: [
       {
         vaccineType: String,
         stage: String,
         status: String,
         date: Date,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    dewormingHistory: [
+      {
         dewormingName: String,
+        date: Date,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    healthCheckupHistory: [
+      {
+        date: Date,
+        notes: String,
         createdAt: {
           type: Date,
           default: Date.now,
@@ -106,5 +159,6 @@ const animalSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Animal", animalSchema);
+
 
 
