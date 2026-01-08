@@ -330,54 +330,111 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 // ---------------------
 // REMINDERS: VACCINE TODAY
 // ---------------------
-app.get("/api/reminders/today",protect, async (req, res) => {
+app.get("/api/reminders/today", protect, async (req, res) => {
   try {
     const start = new Date();
-    start.setHours(0, 0, 0, 0);       // today 00:00
+    start.setHours(0, 0, 0, 0);
 
     const end = new Date();
-    end.setHours(23, 59, 59, 999);    // today 23:59
+    end.setHours(23, 59, 59, 999);
 
     const animals = await Animal.find({
-      "vaccineInfo.vaccineDate": { $gte: start, $lte: end },
-      "owner.phone": { $exists: true, $ne: "" }
+      user: req.user.id,
+      "owner.phone": { $exists: true, $ne: "" },
+      $or: [
+        { "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end } },
+        { "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end } }
+      ]
     });
 
-    res.json(animals);
+    const reminders = [];
+
+    animals.forEach(animal => {
+      if (
+        animal.vaccineInfo?.nextVaccineDate >= start &&
+        animal.vaccineInfo?.nextVaccineDate <= end
+      ) {
+        reminders.push({
+          _id: `${animal._id}-vaccine`,
+          animalId: animal._id,
+          type: "vaccine",
+          name: animal.name,
+          species: animal.species,
+          breed: animal.breed,
+          age: animal.age,
+          owner: animal.owner,
+          dueDate: animal.vaccineInfo.nextVaccineDate,
+          vaccineInfo: animal.vaccineInfo
+        });
+      }
+
+      if (
+        animal.dewormingInfo?.nextDewormingDate >= start &&
+        animal.dewormingInfo?.nextDewormingDate <= end
+      ) {
+        reminders.push({
+          _id: `${animal._id}-deworming`,
+          animalId: animal._id,
+          type: "deworming",
+          name: animal.name,
+          species: animal.species,
+          breed: animal.breed,
+          age: animal.age,
+          owner: animal.owner,
+          dueDate: animal.dewormingInfo.nextDewormingDate,
+          dewormingInfo: animal.dewormingInfo
+        });
+      }
+    });
+
+    res.json(reminders);
   } catch (err) {
     console.error("Reminder fetch error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
+
 // ---------------------
 // UPDATE VACCINE STATUS
 // ---------------------
-app.patch("/api/animals/:id", protect, async (req, res) => {
+app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
   try {
-    const { vaccineStatus } = req.body;
+    const { type } = req.body; // "vaccine" | "deworming"
 
-    const animal = await Animal.findById(req.params.id);
+    const animal = await Animal.findOne({
+      _id: req.params.animalId,
+      user: req.user.id,
+    });
+
     if (!animal) {
       return res.status(404).json({ message: "Animal not found" });
     }
 
-    // ensure vaccineInfo exists (check box)
-    if (!animal.vaccineInfo) {
-      animal.vaccineInfo = {};
+    if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
+      animal.vaccineHistory.push({
+        vaccineType: animal.vaccineInfo.vaccineType,
+        stage: animal.vaccineInfo.stage,
+        date: animal.vaccineInfo.vaccineDate || new Date(),
+        status: "completed",
+      });
+
+      animal.vaccineInfo = {}; // remove reminder
     }
 
-    animal.vaccineInfo.vaccineStatus = vaccineStatus;
+    if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
+      animal.dewormingHistory.push({
+        dewormingName: animal.dewormingInfo.dewormingName,
+        date: new Date(),
+      });
+
+      animal.dewormingInfo = {};
+    }
 
     await animal.save();
-
-    res.json({
-      success: true,
-      message: "Vaccine status updated",
-      animal
-    });
+    res.json({ success: true });
   } catch (err) {
-    console.error("Update vaccine error:", err);
+    console.error("Complete activity error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
