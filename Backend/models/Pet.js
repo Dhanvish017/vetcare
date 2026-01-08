@@ -111,6 +111,12 @@ const animalSchema = new mongoose.Schema(
         type: Date,
       },
 
+      notes: {
+        type: String,
+        trim: true,
+      },
+    
+
       nextCheckupDate: {
         type: Date,
       },
