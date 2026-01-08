@@ -190,15 +190,22 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
     /* =====================
        ❤️ HEALTH CHECKUP
        ===================== */
-    if (req.body.healthCheckupInfo) {
-      if (animal.healthCheckupInfo?.lastCheckupDate) {
-        animal.healthCheckupHistory.push({
-          date: animal.healthCheckupInfo.lastCheckupDate,
-        });
-      }
+       if (req.body.healthCheckupInfo) {
 
-      animal.healthCheckupInfo = req.body.healthCheckupInfo;
-    }
+        // Push previous checkup into history (if exists)
+        if (animal.healthCheckupInfo?.todayCheckup) {
+          animal.healthCheckupHistory.push({
+            todayCheckup: animal.healthCheckupInfo.todayCheckup,
+            date: new Date(),
+          });
+        }
+      
+        // Update current health checkup
+        animal.healthCheckupInfo = {
+          todayCheckup: req.body.healthCheckupInfo.todayCheckup,
+          nextCheckupDate: req.body.healthCheckupInfo.nextCheckupDate,
+        };
+      }
 
     await animal.save();
     res.json(animal);
