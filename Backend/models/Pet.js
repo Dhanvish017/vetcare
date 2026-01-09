@@ -95,6 +95,12 @@ const animalSchema = new mongoose.Schema(
         trim: true,
       },
 
+      dewormingStatus: {
+        type: String,
+        enum: ["pending", "completed"],
+        default: "pending",
+      },
+
       nextDewormingDate: {
         type: Date,
       },

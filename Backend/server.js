@@ -448,9 +448,9 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
 });
 
 // ---------------------
-// DASHBOARD: VACCINE STATS (TODAY)
+// DASHBOARD: TODAY STATS
 // ---------------------
-app.get("/api/dashboard/vaccine-stats", protect, async (req, res) => {
+app.get("/api/dashboard/stats", protect, async (req, res) => {
   try {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -458,35 +458,61 @@ app.get("/api/dashboard/vaccine-stats", protect, async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // 🟡 PENDING TODAY (from reminders)
-    const pending = await Animal.countDocuments({
+    // 🟡 VACCINE PENDING
+    const vaccinePending = await Animal.countDocuments({
       user: req.user.id,
-      "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end },
-      "vaccineInfo.vaccineStatus": { $ne: "completed" },
+      "vaccineInfo.nextVaccineDate":{ $exists: true, $gte: start, $lte: end },
+      "vaccineInfo.vaccineStatus": "pending",
     });
 
-    // 🟢 COMPLETED TODAY (from history)
-    const completedAgg = await Animal.aggregate([
+    // 🟢 VACCINE COMPLETED (from history)
+    const vaccineCompletedAgg = await Animal.aggregate([
       { $match: { user: req.user.id } },
-      { $unwind: "$vaccineHistory" },
+  { $unwind: "$vaccineHistory" },
+  {
+    $match: {
+      "vaccineHistory.date": { $gte: start, $lte: end },
+    },
+  },
+  { $group: { _id: "$_id" } },
+  { $count: "count" },
+]);
+
+    // 🟡 DEWORMING PENDING
+    const dewormingPending = await Animal.countDocuments({
+      user: req.user.id,
+      "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end },
+      "dewormingInfo.dewormingStatus": "pending",
+    });
+
+    // 🟢 DEWORMING COMPLETED (from history)
+    const dewormingCompletedAgg = await Animal.aggregate([
+      { $match: { user: req.user.id } },
+      { $unwind: "$dewormingHistory" },
       {
         $match: {
-          "vaccineHistory.date": { $gte: start, $lte: end },
-          "vaccineHistory.status": "completed",
+          "dewormingHistory.date": { $gte: start, $lte: end },
         },
       },
       { $count: "count" },
     ]);
 
     res.json({
-      pendingToday: pending,
-      completedToday: completedAgg[0]?.count || 0,
+      vaccine: {
+        pending: vaccinePending,
+        completed: vaccineCompletedAgg[0]?.count || 0,
+      },
+      deworming: {
+        pending: dewormingPending,
+        completed: dewormingCompletedAgg[0]?.count || 0,
+      },
     });
   } catch (err) {
     console.error("Dashboard stats error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
   
