@@ -458,34 +458,42 @@ app.get("/api/dashboard/stats", protect, async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // 🟡 VACCINE PENDING
+    // 🟡 VACCINE PENDING (today)
     const vaccinePending = await Animal.countDocuments({
       user: req.user.id,
-      "vaccineInfo.nextVaccineDate":{ $exists: true, $gte: start, $lte: end },
+      "vaccineInfo.nextVaccineDate": {
+        $exists: true,
+        $gte: start,
+        $lte: end,
+      },
       "vaccineInfo.vaccineStatus": "pending",
     });
 
-    // 🟢 VACCINE COMPLETED (from history)
+    // 🟢 VACCINE COMPLETED (unique animals today)
     const vaccineCompletedAgg = await Animal.aggregate([
       { $match: { user: req.user.id } },
-  { $unwind: "$vaccineHistory" },
-  {
-    $match: {
-      "vaccineHistory.date": { $gte: start, $lte: end },
-    },
-  },
-  { $group: { _id: "$_id" } },
-  { $count: "count" },
-]);
+      { $unwind: "$vaccineHistory" },
+      {
+        $match: {
+          "vaccineHistory.date": { $gte: start, $lte: end },
+        },
+      },
+      { $group: { _id: "$_id" } }, // unique animal
+      { $count: "count" },
+    ]);
 
-    // 🟡 DEWORMING PENDING
+    // 🟡 DEWORMING PENDING (today)
     const dewormingPending = await Animal.countDocuments({
       user: req.user.id,
-      "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end },
+      "dewormingInfo.nextDewormingDate": {
+        $exists: true,
+        $gte: start,
+        $lte: end,
+      },
       "dewormingInfo.dewormingStatus": "pending",
     });
 
-    // 🟢 DEWORMING COMPLETED (from history)
+    // 🟢 DEWORMING COMPLETED (unique animals today)
     const dewormingCompletedAgg = await Animal.aggregate([
       { $match: { user: req.user.id } },
       { $unwind: "$dewormingHistory" },
@@ -494,6 +502,7 @@ app.get("/api/dashboard/stats", protect, async (req, res) => {
           "dewormingHistory.date": { $gte: start, $lte: end },
         },
       },
+      { $group: { _id: "$_id" } }, // unique animal
       { $count: "count" },
     ]);
 
