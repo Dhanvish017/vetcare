@@ -344,11 +344,9 @@ app.get("/api/reminders/today", protect, async (req, res) => {
       $or: [
         {
           "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end },
-          "vaccineInfo.vaccineStatus": { $ne: "completed" }
         },
         {
           "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end },
-          "dewormingInfo.dewormingStatus": { $ne: "completed" }
         }
       ]      
     });
@@ -371,6 +369,7 @@ app.get("/api/reminders/today", protect, async (req, res) => {
           age: animal.age,
           owner: animal.owner,
           dueDate: animal.vaccineInfo.nextVaccineDate,
+          vaccineStatus: animal.vaccineInfo.vaccineStatus,
           vaccineInfo: animal.vaccineInfo
         });
       }
@@ -390,6 +389,7 @@ app.get("/api/reminders/today", protect, async (req, res) => {
           age: animal.age,
           owner: animal.owner,
           dueDate: animal.dewormingInfo.nextDewormingDate,
+          dewormingStatus: animal.dewormingInfo.dewormingStatus,
           dewormingInfo: animal.dewormingInfo
         });
       }
