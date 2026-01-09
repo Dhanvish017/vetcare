@@ -447,7 +447,6 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
   }
 });
 
-
 // ---------------------
 // DASHBOARD: VACCINE STATS (TODAY)
 // ---------------------
@@ -459,20 +458,21 @@ app.get("/api/dashboard/vaccine-stats", protect, async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // 🟡 Pending today (from vaccineInfo)
+    // 🟡 PENDING TODAY (from reminders)
     const pending = await Animal.countDocuments({
       user: req.user.id,
-      "vaccineInfo.vaccineDate": { $gte: start, $lte: end },
-      "vaccineInfo.vaccineStatus": "pending",
+      "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end },
+      "vaccineInfo.vaccineStatus": { $ne: "completed" },
     });
 
-    // 🟢 Completed today (from history)
+    // 🟢 COMPLETED TODAY (from history)
     const completedAgg = await Animal.aggregate([
       { $match: { user: req.user.id } },
       { $unwind: "$vaccineHistory" },
       {
         $match: {
           "vaccineHistory.date": { $gte: start, $lte: end },
+          "vaccineHistory.status": "completed",
         },
       },
       { $count: "count" },
@@ -487,6 +487,7 @@ app.get("/api/dashboard/vaccine-stats", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
   
 
