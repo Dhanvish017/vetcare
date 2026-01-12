@@ -18,10 +18,7 @@ const jwt = require("jsonwebtoken");
 app.use(express.json());
 app.use(
   cors({
-    origin: [
-      "https://vetcare-peach.vercel.app",  // your frontend URL (update if different)
-      "http://localhost:5173"        // for local dev (Vite)
-    ],
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
