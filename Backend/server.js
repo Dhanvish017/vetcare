@@ -73,50 +73,47 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-
-// SEND OTP (DEV MODE)
+// send otp
 app.post("/api/send-otp", async (req, res) => {
   try {
     const { phone } = req.body;
 
-    if (!phone) {
-      return res.status(400).json({ message: "Phone number required" });
-    }
+    const otp = "123456"; // DEV OTP
+    const expires = Date.now() + 5 * 60 * 1000;
 
-    // 🔥 FIXED OTP FOR DEV
-    const otp = "123456";
-
+    // 🔥 FIND BY PHONE ONLY
     let user = await User.findOne({ phone });
 
     if (!user) {
+      // ✅ CREATE NEW USER FOR NEW PHONE
       user = await User.create({
         phone,
         otp,
-        otpExpiresAt: Date.now() + 5 * 60 * 1000, // 5 mins
+        otpExpiresAt: expires,
       });
     } else {
+      // ✅ UPDATE EXISTING PHONE USER
       user.otp = otp;
-      user.otpExpiresAt = Date.now() + 5 * 60 * 1000;
+      user.otpExpiresAt = expires;
       await user.save();
     }
 
-    console.log(`🧪 DEV OTP for ${phone}: ${otp}`);
+    console.log("OTP SENT:", phone, otp);
 
-    res.json({
-      message: "OTP sent (DEV MODE)",
-    });
+    res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 
-
-// VERIFY OTP
+//verify otp
 app.post("/api/verify-otp", async (req, res) => {
   try {
     const { phone, otp } = req.body;
 
+    // 🔥 FIND BY PHONE
     const user = await User.findOne({ phone });
 
     if (!user) {
@@ -124,33 +121,31 @@ app.post("/api/verify-otp", async (req, res) => {
     }
 
     if (user.otp !== otp) {
-      return res.status(401).json({ message: "Invalid OTP" });
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
     if (user.otpExpiresAt < Date.now()) {
-      return res.status(401).json({ message: "OTP expired" });
+      return res.status(400).json({ message: "OTP expired" });
     }
 
-    // Clear OTP
-    user.otp = null;
-    user.otpExpiresAt = null;
-    await user.save();
-
-    // Generate token
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET || "dev_secret",
       { expiresIn: "7d" }
     );
 
-    res.json({
-      message: "Login success",
-      token,
-    });
+    // clear OTP after success
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    res.json({ token });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
