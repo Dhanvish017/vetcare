@@ -74,31 +74,86 @@ app.post("/signup", async (req, res) => {
 });
 
 
-// ---------------------
-// LOGIN
-// ---------------------
-app.post("/login", async (req, res) => {
+// SEND OTP (DEV MODE)
+app.post("/api/send-otp", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone } = req.body;
 
-    const user = await User.findOne({ email }).select("+password");
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number required" });
+    }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match)
-      return res.status(401).json({ message: "Password incorrect" });
+    // 🔥 FIXED OTP FOR DEV
+    const otp = "123456";
 
+    let user = await User.findOne({ phone });
+
+    if (!user) {
+      user = await User.create({
+        phone,
+        otp,
+        otpExpiresAt: Date.now() + 5 * 60 * 1000, // 5 mins
+      });
+    } else {
+      user.otp = otp;
+      user.otpExpiresAt = Date.now() + 5 * 60 * 1000;
+      await user.save();
+    }
+
+    console.log(`🧪 DEV OTP for ${phone}: ${otp}`);
+
+    res.json({
+      message: "OTP sent (DEV MODE)",
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// VERIFY OTP
+app.post("/api/verify-otp", async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(401).json({ message: "Invalid OTP" });
+    }
+
+    if (user.otpExpiresAt < Date.now()) {
+      return res.status(401).json({ message: "OTP expired" });
+    }
+
+    // Clear OTP
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    // Generate token
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || "vinay_super_secret",
+      process.env.JWT_SECRET || "dev_secret",
       { expiresIn: "7d" }
     );
 
-    res.json({ message: "Success", token });
+    res.json({
+      message: "Login success",
+      token,
+    });
   } catch (err) {
-   res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
 
 // ---------------------
 // PROFILE (GET)
