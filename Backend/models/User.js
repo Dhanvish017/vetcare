@@ -1,15 +1,25 @@
-// models/User.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    unique: true,
+    unique: true, // ✅ phone is identity
+    index: true,
   },
 
-  otp: String,
-  otpExpiresAt: Date,
+  otp: {
+    type: String,
+  },
+
+  otpExpiresAt: {
+    type: Date,
+  },
+
+  // optional profile (filled later)
+  name: {
+    type: String,
+  },
 
   role: {
     type: String,
@@ -22,6 +32,8 @@ const userSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+module.exports = mongoose.model("User", userSchema);
 
 module.exports = mongoose.model("User", userSchema);
 
