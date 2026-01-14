@@ -152,30 +152,62 @@ app.post("/api/verify-otp", async (req, res) => {
 });
 
 
-
-
-
-// ---------------------
-// PROFILE (GET)
-// ---------------------
-app.get("/profile", protect, async (req, res) => {
-  res.json(req.user);
-});
-
-// --------------------- 
-// PROFILE UPDATE
-// ---------------------
-app.put("/profile", protect, async (req, res) => {
+// CREATE ACCOUNT
+app.put("/api/profile", protect, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.user.id, req.body, {
-      new: true
-    }).select("-password");
+    const {
+      name,
+      email,
+      address,
+      clinicName,
+      accountType,
+    } = req.body;
 
-    res.json(user);
+    // BASIC VALIDATION
+    if (!name || !email || !address || !accountType) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (accountType === "clinic" && !clinicName) {
+      return res.status(400).json({ message: "Clinic name required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        name,
+        email,
+        address,
+        clinicName: accountType === "clinic" ? clinicName : null,
+        accountType,
+        isProfileComplete: true, // VERY IMPORTANT
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      user,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Update failed" });
+    console.error("PROFILE UPDATE ERROR:", err);
+    res.status(500).json({ message: "Profile update failed" });
   }
 });
+
+
+// GET PROFILE
+app.get("/api/profile", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-otp -otpExpiresAt");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
+
+
+
 
 // ---------------------
 // ADD ANIMAL INFO

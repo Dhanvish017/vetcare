@@ -1,41 +1,72 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
-  phone: {
-    type: String,
-    required: true,
-    unique: true, // ✅ phone is identity
-    index: true,
-  },
+const userSchema = new mongoose.Schema(
+  {
+    // 🔐 AUTH (OTP LOGIN)
+    phone: {
+      type: String,
+      required: true,
+      unique: true,       // phone = identity
+      index: true,
+    },
 
-  otp: {
-    type: String,
-  },
+    otp: {
+      type: String,
+    },
 
-  otpExpiresAt: {
-    type: Date,
-  },
+    otpExpiresAt: {
+      type: Date,
+    },
 
-  // optional profile (filled later)
-  name: {
-    type: String,
-  },
+    // 👤 PROFILE (CREATE ACCOUNT SCREEN)
+    name: {
+      type: String,
+      trim: true,
+    },
 
-  role: {
-    type: String,
-    enum: ["user", "admin"],
-    default: "user",
-  },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
 
-  createdAt: {
-    type: Date,
-    default: Date.now,
+    address: {
+      type: String,
+      trim: true,
+    },
+
+    // 🏥 CLINIC SUPPORT
+    clinicName: {
+      type: String,
+      trim: true,
+    },
+
+    accountType: {
+      type: String,
+      enum: ["clinic", "individual"],
+    },
+
+    // ✅ VERY IMPORTANT FLAG
+    isProfileComplete: {
+      type: Boolean,
+      default: false,
+    },
+
+    // 🛡️ SYSTEM
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
   },
-});
+  {
+    timestamps: true, // createdAt, updatedAt
+  }
+);
 
 module.exports = mongoose.model("User", userSchema);
 
-module.exports = mongoose.model("User", userSchema);
+
 
 
 
