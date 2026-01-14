@@ -23,6 +23,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+app.use(express.urlencoded({ extended: true }));
 
 const notifyRoutes = require("./routes/notify");
 app.use("/api/notify", notifyRoutes);
@@ -76,36 +77,40 @@ app.post("/signup", async (req, res) => {
 // send otp
 app.post("/api/send-otp", async (req, res) => {
   try {
-    const { phone } = req.body;
+    console.log("RAW BODY:", req.body);
 
-    const otp = "123456"; // DEV OTP
+    const phone = req.body.phone;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Phone missing in request body" });
+    }
+
+    const otp = "123456";
     const expires = Date.now() + 5 * 60 * 1000;
 
-    // 🔥 FIND BY PHONE ONLY
     let user = await User.findOne({ phone });
 
     if (!user) {
-      // ✅ CREATE NEW USER FOR NEW PHONE
       user = await User.create({
         phone,
         otp,
         otpExpiresAt: expires,
       });
     } else {
-      // ✅ UPDATE EXISTING PHONE USER
       user.otp = otp;
       user.otpExpiresAt = expires;
       await user.save();
     }
 
     console.log("OTP SENT:", phone, otp);
-
     res.json({ success: true });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("SEND OTP ERROR:", err.message);
+    res.status(500).json({ message: err.message });
   }
 });
+
 
 
 //verify otp
