@@ -66,9 +66,14 @@ const animalSchema = new mongoose.Schema(
 
       stage: {
         type: String,
-        enum: ["Primary", "Booster", "2nd Booster", "Annual"],
+        enum: ["1st", "2nd", "3rd", "4th", "Custom"],
       },
-
+      
+      customStage: {
+        type: String,
+        trim: true,
+      },
+      
       vaccineStatus: {
         type: String,
         enum: ["pending", "completed"],
