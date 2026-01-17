@@ -105,22 +105,6 @@ const animalSchema = new mongoose.Schema(
         type: Date,
       },
     },
-
-    /* =========================
-   ❤️ REGULAR HEALTH CHECKUP
-   ========================= */
-healthCheckupInfo: {
-  todayCheckup: {
-    type: String,   // TEXT entered by user
-    trim: true,
-  },
-
-  nextCheckupDate: {
-    type: Date,     // calculated date
-  },
-},
-
-
     /* =========================
        📜 ACTIVITY HISTORY
        ========================= */
@@ -145,17 +129,6 @@ healthCheckupInfo: {
         createdAt: {
           type: Date,
           default: Date.now,
-        },
-      },
-    ],
-
-    healthCheckupHistory: [
-      {
-        todayCheckup: String,
-    date: Date, // when this record was added
-    createdAt: {
-      type: Date,
-      default: Date.now,
         },
       },
     ],
