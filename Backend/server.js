@@ -283,8 +283,6 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
 });
 
 
-
-
 // ---------------------
 // GET ALL ANIMALS
 // ---------------------
@@ -297,7 +295,6 @@ app.get("/api/animals", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch animals" });
   }
 });
-
 
 
 // ---------------------
@@ -588,9 +585,7 @@ app.get("/api/dashboard/stats", protect, async (req, res) => {
   }
 });
 
-
-
-  
+ 
 
 // ---------------------
 app.listen(process.env.PORT || 5001, () =>
