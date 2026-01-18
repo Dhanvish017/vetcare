@@ -250,11 +250,27 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
           vaccineType: animal.vaccineInfo.vaccineType,
           stage: animal.vaccineInfo.stage,
           status: animal.vaccineInfo.vaccineStatus,
-          date: animal.vaccineInfo.vaccineDate,
+          date: animal.vaccineInfo.nextVaccineDate,
         });
       }
 
-      animal.vaccineInfo = req.body.vaccineInfo;
+      if (
+        !req.body.vaccineInfo.stage ||
+        !["1st", "2nd", "3rd", "4th", "Custom"].includes(req.body.vaccineInfo.stage)
+      ) {
+        return res.status(400).json({
+          message: "Invalid or missing vaccine stage",
+        });
+      }
+      
+
+      animal.vaccineInfo = {
+        vaccineType: req.body.vaccineInfo.vaccineType,
+        stage: req.body.vaccineInfo.stage,
+        customStage: req.body.vaccineInfo.customStage || "",
+        vaccineStatus: req.body.vaccineInfo.vaccineStatus || "completed",
+        nextVaccineDate: req.body.vaccineInfo.nextVaccineDate,
+      };
     }
 
     /* =====================
@@ -268,7 +284,12 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
         });
       }
 
-      animal.dewormingInfo = req.body.dewormingInfo;
+      animal.dewormingInfo = {
+        presentDewormingName: req.body.dewormingInfo.presentDewormingName || "",
+        dewormingName: req.body.dewormingInfo.dewormingName || "",
+        nextDewormingDate: req.body.dewormingInfo.nextDewormingDate,
+        dewormingStatus: "pending",
+      };
     }
 
     
@@ -278,7 +299,7 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ error: err, message: err.message });
   }
 });
 
