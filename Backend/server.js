@@ -265,12 +265,14 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
       
 
       animal.vaccineInfo = {
+        presentVaccineType: req.body.vaccineInfo.presentVaccineType || "",
         vaccineType: req.body.vaccineInfo.vaccineType,
         stage: req.body.vaccineInfo.stage,
         customStage: req.body.vaccineInfo.customStage || "",
         vaccineStatus: req.body.vaccineInfo.vaccineStatus || "completed",
         nextVaccineDate: req.body.vaccineInfo.nextVaccineDate,
       };
+      
     }
 
     /* =====================
