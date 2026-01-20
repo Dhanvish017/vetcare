@@ -269,7 +269,7 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
         vaccineType: req.body.vaccineInfo.vaccineType,
         stage: req.body.vaccineInfo.stage,
         customStage: req.body.vaccineInfo.customStage || "",
-        vaccineStatus: req.body.vaccineInfo.vaccineStatus || "completed",
+        vaccineStatus: "pending",
         nextVaccineDate: req.body.vaccineInfo.nextVaccineDate,
       };
       
