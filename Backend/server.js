@@ -335,7 +335,7 @@ app.get("/api/animals/:id",protect, async (req, res) => {
 // ---------------------
 // UPDATE ANIMAL
 // ---------------------
-app.put("/api/animals/:id",protect, async (req, res) => {
+/*app.put("/api/animals/:id",protect, async (req, res) => {
   try {
     const animal = await Animal.findOne({ 
       _id: req.params.id,
@@ -368,7 +368,7 @@ app.put("/api/animals/:id",protect, async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
-});
+});*/
 
 // ---------------------
 // DELETE ANIMAL
@@ -426,7 +426,15 @@ app.get("/api/reminders/today", protect, async (req, res) => {
 
     const animals = await Animal.find({
       user: req.user.id,
-      "owner.phone": { $exists: true, $ne: "" }
+      "owner.phone": { $exists: true, $ne: "" },
+      $or: [
+        {
+          "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end },
+        },
+        {
+          "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end },
+        }
+      ]      
     });
 
     const reminders = [];
@@ -501,7 +509,6 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
         vaccineType: animal.vaccineInfo.vaccineType,
         stage: animal.vaccineInfo.stage,
         date: animal.vaccineInfo.nextVaccineDate || new Date(),
-
         status: "completed",
       });
 
