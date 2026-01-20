@@ -526,73 +526,46 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
   }
 });
 
-// ---------------------
-// DASHBOARD: TODAY STATS
+/// ---------------------
+// DASHBOARD: TOTAL STATS
 // ---------------------
 app.get("/api/dashboard/stats", protect, async (req, res) => {
   try {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    const animals = await Animal.find({ user: req.user.id });
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    let vaccinePending = 0;
+    let vaccineCompleted = 0;
+    let dewormingPending = 0;
+    let dewormingCompleted = 0;
 
-    // 🟡 VACCINE PENDING (today)
-    const vaccinePending = await Animal.countDocuments({
-      user: req.user.id,
-      "vaccineInfo.nextVaccineDate": {
-        $exists: true,
-        $gte: start,
-        $lte: end,
-      },
-      "vaccineInfo.vaccineStatus": "pending",
+    animals.forEach(animal => {
+      // 💉 VACCINE
+      if (animal.vaccineInfo?.vaccineType) {
+        if (animal.vaccineInfo.vaccineStatus === "completed") {
+          vaccineCompleted++;
+        } else {
+          vaccinePending++;
+        }
+      }
+
+      // 🪱 DEWORMING
+      if (animal.dewormingInfo?.dewormingName) {
+        if (animal.dewormingInfo.dewormingStatus === "completed") {
+          dewormingCompleted++;
+        } else {
+          dewormingPending++;
+        }
+      }
     });
-
-    // 🟢 VACCINE COMPLETED (unique animals today)
-    const vaccineCompletedAgg = await Animal.aggregate([
-      { $match: { user: req.user.id } },
-      { $unwind: "$vaccineHistory" },
-      {
-        $match: {
-          "vaccineHistory.date": { $gte: start, $lte: end },
-        },
-      },
-      { $group: { _id: "$_id" } }, // unique animal
-      { $count: "count" },
-    ]);
-
-    // 🟡 DEWORMING PENDING (today)
-    const dewormingPending = await Animal.countDocuments({
-      user: req.user.id,
-      "dewormingInfo.nextDewormingDate": {
-        $exists: true,
-        $gte: start,
-        $lte: end,
-      },
-      "dewormingInfo.dewormingStatus": "pending",
-    });
-
-    // 🟢 DEWORMING COMPLETED (unique animals today)
-    const dewormingCompletedAgg = await Animal.aggregate([
-      { $match: { user: req.user.id } },
-      { $unwind: "$dewormingHistory" },
-      {
-        $match: {
-          "dewormingHistory.date": { $gte: start, $lte: end },
-        },
-      },
-      { $group: { _id: "$_id" } }, // unique animal
-      { $count: "count" },
-    ]);
 
     res.json({
       vaccine: {
         pending: vaccinePending,
-        completed: vaccineCompletedAgg[0]?.count || 0,
+        completed: vaccineCompleted,
       },
       deworming: {
         pending: dewormingPending,
-        completed: dewormingCompletedAgg[0]?.count || 0,
+        completed: dewormingCompleted,
       },
     });
   } catch (err) {
