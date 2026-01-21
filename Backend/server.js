@@ -144,7 +144,10 @@ app.post("/api/verify-otp", async (req, res) => {
     user.otpExpiresAt = null;
     await user.save();
 
-    res.json({ token });
+    res.json({
+      token,
+      isProfileComplete: user.isProfileComplete,
+    });    
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
