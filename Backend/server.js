@@ -355,6 +355,28 @@ app.get("/api/owners", protect, async (req, res) => {
   }
 });
 
+// ---------------------
+// GET OWNER BY ID (WITH ANIMALS)
+// ---------------------
+app.get("/api/owners/:id", protect, async (req, res) => {
+  try {
+    const owner = await Owner.findOne({
+      _id: req.params.id,
+      user: req.user.id,
+    }).populate("animals");
+
+    if (!owner) {
+      return res.status(404).json({ message: "Owner not found" });
+    }
+
+    res.json(owner);
+  } catch (err) {
+    console.error("FETCH OWNER BY ID ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch owner" });
+  }
+});
+
+
 
 
 // ---------------------
