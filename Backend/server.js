@@ -422,31 +422,26 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 app.get("/api/reminders/today", protect, async (req, res) => {
   try {
     const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    start.setUTCHours(0, 0, 0, 0);
 
     const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    end.setUTCHours(23, 59, 59, 999);
 
     const animals = await Animal.find({
       user: req.user.id,
       "owner.phone": { $exists: true, $ne: "" },
-      $or: [
-        {
-          "vaccineInfo.nextVaccineDate": { $gte: start, $lte: end },
-        },
-        {
-          "dewormingInfo.nextDewormingDate": { $gte: start, $lte: end },
-        }
-      ]      
     });
 
     const reminders = [];
 
     animals.forEach(animal => {
+
+      // 💉 VACCINE
       if (
-        animal.vaccineInfo?.nextVaccineDate >= start &&
-        animal.vaccineInfo?.nextVaccineDate <= end &&
-        animal.vaccineInfo?.vaccineStatus !== "completed"
+        animal.vaccineInfo?.nextVaccineDate &&
+        new Date(animal.vaccineInfo.nextVaccineDate) >= start &&
+        new Date(animal.vaccineInfo.nextVaccineDate) <= end &&
+        animal.vaccineInfo.vaccineStatus === "pending"
       ) {
         reminders.push({
           _id: `${animal._id}-vaccine`,
@@ -459,14 +454,16 @@ app.get("/api/reminders/today", protect, async (req, res) => {
           owner: animal.owner,
           dueDate: animal.vaccineInfo.nextVaccineDate,
           vaccineStatus: animal.vaccineInfo.vaccineStatus,
-          vaccineInfo: animal.vaccineInfo
+          vaccineInfo: animal.vaccineInfo,
         });
       }
 
+      // 🪱 DEWORMING
       if (
-        animal.dewormingInfo?.nextDewormingDate >= start &&
-        animal.dewormingInfo?.nextDewormingDate <= end &&
-        animal.dewormingInfo?.dewormingStatus !== "completed"
+        animal.dewormingInfo?.nextDewormingDate &&
+        new Date(animal.dewormingInfo.nextDewormingDate) >= start &&
+        new Date(animal.dewormingInfo.nextDewormingDate) <= end &&
+        animal.dewormingInfo.dewormingStatus === "pending"
       ) {
         reminders.push({
           _id: `${animal._id}-deworming`,
@@ -479,7 +476,7 @@ app.get("/api/reminders/today", protect, async (req, res) => {
           owner: animal.owner,
           dueDate: animal.dewormingInfo.nextDewormingDate,
           dewormingStatus: animal.dewormingInfo.dewormingStatus,
-          dewormingInfo: animal.dewormingInfo
+          dewormingInfo: animal.dewormingInfo,
         });
       }
     });
@@ -490,6 +487,7 @@ app.get("/api/reminders/today", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
