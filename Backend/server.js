@@ -379,9 +379,10 @@ app.get("/api/owners/:id", protect, async (req, res) => {
       animals,
     });
   } catch (err) {
-    console.error("FETCH OWNER ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch owner" });
+    console.error("REAL FETCH OWNER ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
+  
 });
 
 
