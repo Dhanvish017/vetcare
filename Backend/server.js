@@ -219,17 +219,31 @@ app.get("/api/profile", protect, async (req, res) => {
 // ---------------------
 app.post("/api/animals", protect, async (req, res) => {
   try {
+    const { ownerId, ...animalData } = req.body;
+
+    if (!ownerId) {
+      return res.status(400).json({ message: "ownerId is required" });
+    }
+
+    // 1️⃣ Create animal with ownerId
     const animal = await Animal.create({
-      ...req.body,        // includes vaccineInfo, owner, etc.
-      user: req.user.id,  // enforce logged-in user ownership
+      ...animalData,
+      ownerId,
+      user: req.user.id,
+    });
+
+    // 2️⃣ Push animal into owner.animals[]
+    await Owner.findByIdAndUpdate(ownerId, {
+      $push: { animals: animal._id },
     });
 
     res.status(201).json(animal);
   } catch (err) {
-    console.error("Add animal error:", err);
+    console.error("ADD ANIMAL ERROR:", err);
     res.status(400).json({ message: err.message });
   }
 });
+
 
 // CREATE OWNER (first time)
 app.post("/api/owners", protect, async (req, res) => {
