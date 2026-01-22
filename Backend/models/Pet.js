@@ -43,11 +43,18 @@ const animalSchema = new mongoose.Schema(
     },
 
     // 👤 OWNER INFO
-    owner: {
+    /*owner: {
       name: { type: String, trim: true },
       email: { type: String, trim: true },
       phone: { type: String, trim: true },
       address: { type: String, trim: true },
+    },*/
+
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Owner",
+      required: true,
+      index: true,
     },
 
     /* =========================

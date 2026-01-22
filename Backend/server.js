@@ -231,6 +231,38 @@ app.post("/api/animals", protect, async (req, res) => {
   }
 });
 
+// CREATE OWNER (first time)
+app.post("/api/owners", protect, async (req, res) => {
+  try {
+    const { name, phone, email, address } = req.body;
+
+    if (!name || !phone) {
+      return res.status(400).json({ message: "Name and phone required" });
+    }
+
+    // avoid duplicate owner by phone
+    let owner = await Owner.findOne({ phone, user: req.user.id });
+
+    if (owner) {
+      return res.json(owner);
+    }
+
+    owner = await Owner.create({
+      name,
+      phone,
+      email,
+      address,
+      user: req.user.id,
+    });
+
+    res.status(201).json(owner);
+  } catch (err) {
+    console.error("CREATE OWNER ERROR:", err);
+    res.status(500).json({ message: "Failed to create owner" });
+  }
+});
+
+
 // ---------------------
 // ADD ANIMAL ACTIVITIES
 // ---------------------
