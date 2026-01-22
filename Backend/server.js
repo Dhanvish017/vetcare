@@ -356,25 +356,34 @@ app.get("/api/owners", protect, async (req, res) => {
 });
 
 // ---------------------
-// GET OWNER BY ID (WITH ANIMALS)
+// GET OWNER + ANIMALS (SAFE)
 // ---------------------
 app.get("/api/owners/:id", protect, async (req, res) => {
   try {
     const owner = await Owner.findOne({
       _id: req.params.id,
       user: req.user.id,
-    }).populate("animals");
+    });
 
     if (!owner) {
       return res.status(404).json({ message: "Owner not found" });
     }
 
-    res.json(owner);
+    const animals = await Animal.find({
+      ownerId: owner._id,
+      user: req.user.id,
+    });
+
+    res.json({
+      ...owner.toObject(),
+      animals,
+    });
   } catch (err) {
-    console.error("FETCH OWNER BY ID ERROR:", err);
+    console.error("FETCH OWNER ERROR:", err);
     res.status(500).json({ message: "Failed to fetch owner" });
   }
 });
+
 
 
 
