@@ -7,6 +7,8 @@ const app = express();
 
 const User = require("./models/User");
 const Animal = require("./models/Pet");
+const Owner = require("./models/Owner");
+
 const { protect } = require("./middleware/auth");
 
 const bcrypt = require("bcryptjs");
@@ -307,6 +309,20 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
     res.status(400).json({ error: err, message: err.message });
   }
 });
+
+// ---------------------
+// GET ALL OWNERS
+// ---------------------
+app.get("/api/owners", protect, async (req, res) => {
+  try {
+    const owners = await Owner.find({ user: req.user.id });
+    res.json(owners);
+  } catch (err) {
+    console.error("FETCH OWNERS ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch owners" });
+  }
+});
+
 
 
 // ---------------------
