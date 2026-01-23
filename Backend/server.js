@@ -511,76 +511,70 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 });
 
 // ---------------------
-// REMINDERS: VACCINE TODAY
+// REMINDERS: NEXT 7 DAYS
 // ---------------------
-app.get("/api/reminders/today", protect, async (req, res) => {
+app.get("/api/reminders", protect, async (req, res) => {
   try {
-    const start = new Date();
-    start.setUTCHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
-    const end = new Date();
-    end.setUTCHours(23, 59, 59, 999);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    weekEnd.setUTCHours(23, 59, 59, 999);
 
     const animals = await Animal.find({
       user: req.user.id,
-      "owner.phone": { $exists: true, $ne: "" },
     });
 
     const reminders = [];
 
-    animals.forEach(animal => {
-
+    animals.forEach((animal) => {
       // 💉 VACCINE
       if (
         animal.vaccineInfo?.nextVaccineDate &&
-        new Date(animal.vaccineInfo.nextVaccineDate) >= start &&
-        new Date(animal.vaccineInfo.nextVaccineDate) <= end &&
         animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        reminders.push({
-          _id: `${animal._id}-vaccine`,
-          animalId: animal._id,
-          type: "vaccine",
-          name: animal.name,
-          species: animal.species,
-          breed: animal.breed,
-          age: animal.age,
-          owner: animal.owner,
-          dueDate: animal.vaccineInfo.nextVaccineDate,
-          vaccineStatus: animal.vaccineInfo.vaccineStatus,
-          vaccineInfo: animal.vaccineInfo,
-        });
+        const date = new Date(animal.vaccineInfo.nextVaccineDate);
+        if (date >= today && date <= weekEnd) {
+          reminders.push({
+            _id: `${animal._id}-vaccine`,
+            type: "vaccine",
+            dueDate: date,
+            animalId: animal._id,
+            animalName: animal.name,
+            species: animal.species,
+            ownerId: animal.ownerId,
+          });
+        }
       }
 
       // 🪱 DEWORMING
       if (
         animal.dewormingInfo?.nextDewormingDate &&
-        new Date(animal.dewormingInfo.nextDewormingDate) >= start &&
-        new Date(animal.dewormingInfo.nextDewormingDate) <= end &&
         animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        reminders.push({
-          _id: `${animal._id}-deworming`,
-          animalId: animal._id,
-          type: "deworming",
-          name: animal.name,
-          species: animal.species,
-          breed: animal.breed,
-          age: animal.age,
-          owner: animal.owner,
-          dueDate: animal.dewormingInfo.nextDewormingDate,
-          dewormingStatus: animal.dewormingInfo.dewormingStatus,
-          dewormingInfo: animal.dewormingInfo,
-        });
+        const date = new Date(animal.dewormingInfo.nextDewormingDate);
+        if (date >= today && date <= weekEnd) {
+          reminders.push({
+            _id: `${animal._id}-deworming`,
+            type: "deworming",
+            dueDate: date,
+            animalId: animal._id,
+            animalName: animal.name,
+            species: animal.species,
+            ownerId: animal.ownerId,
+          });
+        }
       }
     });
 
     res.json(reminders);
   } catch (err) {
-    console.error("Reminder fetch error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("REMINDER ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch reminders" });
   }
 });
+
 
 
 
