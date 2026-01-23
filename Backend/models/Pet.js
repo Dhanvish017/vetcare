@@ -73,7 +73,7 @@ const animalSchema = new mongoose.Schema(
 
       stage: {
         type: String,
-        enum: ["1st", "2nd", "3rd", "4th", "Custom"],
+        enum: ["1st", "2nd", "3rd", "4th","Annual", "Custom"],
       },
       
       customStage: {
