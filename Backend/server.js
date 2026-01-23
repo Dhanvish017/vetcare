@@ -578,7 +578,7 @@ app.get("/api/reminders", protect, async (req, res) => {
 
 
 
-
+//notification complete button 
 app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
   try {
     const { type } = req.body;
@@ -592,20 +592,28 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
       return res.status(404).json({ message: "Animal not found" });
     }
 
-    if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
-      // push history
+    // 💉 VACCINE COMPLETE
+    if (type === "vaccine") {
+      if (!animal.vaccineInfo || !animal.vaccineInfo.vaccineType) {
+        return res.status(400).json({ message: "No vaccine to complete" });
+      }
+
       animal.vaccineHistory.push({
         vaccineType: animal.vaccineInfo.vaccineType,
-        stage: animal.vaccineInfo.stage,
+        stage: animal.vaccineInfo.stage || "",
         date: animal.vaccineInfo.nextVaccineDate || new Date(),
         status: "completed",
       });
 
-      // ✅ update status (DO NOT DELETE)
       animal.vaccineInfo.vaccineStatus = "completed";
     }
 
-    if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
+    // 🪱 DEWORMING COMPLETE
+    if (type === "deworming") {
+      if (!animal.dewormingInfo || !animal.dewormingInfo.dewormingName) {
+        return res.status(400).json({ message: "No deworming to complete" });
+      }
+
       animal.dewormingHistory.push({
         dewormingName: animal.dewormingInfo.dewormingName,
         date: animal.dewormingInfo.nextDewormingDate || new Date(),
@@ -615,12 +623,13 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
     }
 
     await animal.save();
-    res.json({ success: true, animal });
+    res.json({ success: true });
   } catch (err) {
-    console.error("Complete activity error:", err);
+    console.error("COMPLETE ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 /// ---------------------
 // DASHBOARD: TOTAL STATS
