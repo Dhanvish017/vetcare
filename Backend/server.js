@@ -592,33 +592,28 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
       return res.status(404).json({ message: "Animal not found" });
     }
 
-    // 💉 VACCINE COMPLETE
-    if (type === "vaccine") {
-      if (!animal.vaccineInfo || !animal.vaccineInfo.vaccineType) {
-        return res.status(400).json({ message: "No vaccine to complete" });
-      }
+    // 🔥 TEMP SAFETY FOR OLD RECORDS
+    if (!animal.ownerId) {
+      return res.status(400).json({
+        message: "Animal missing ownerId. Please re-add animal.",
+      });
+    }
 
+    if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
       animal.vaccineHistory.push({
         vaccineType: animal.vaccineInfo.vaccineType,
         stage: animal.vaccineInfo.stage || "",
         date: animal.vaccineInfo.nextVaccineDate || new Date(),
         status: "completed",
       });
-
       animal.vaccineInfo.vaccineStatus = "completed";
     }
 
-    // 🪱 DEWORMING COMPLETE
-    if (type === "deworming") {
-      if (!animal.dewormingInfo || !animal.dewormingInfo.dewormingName) {
-        return res.status(400).json({ message: "No deworming to complete" });
-      }
-
+    if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
       animal.dewormingHistory.push({
         dewormingName: animal.dewormingInfo.dewormingName,
         date: animal.dewormingInfo.nextDewormingDate || new Date(),
       });
-
       animal.dewormingInfo.dewormingStatus = "completed";
     }
 
@@ -629,6 +624,7 @@ app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 /// ---------------------
