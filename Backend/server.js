@@ -576,6 +576,36 @@ app.get("/api/reminders", protect, async (req, res) => {
 });
 
 
+/// notification template 
+app.post("/api/notify/whatsapp-template", protect, async (req, res) => {
+  try {
+    const { templateId } = req.body;
+
+    if (!templateId) {
+      return res.status(400).json({ message: "Template is required" });
+    }
+
+    await User.findByIdAndUpdate(req.user.id, {
+      whatsappTemplate: templateId,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to save template" });
+  }
+});
+
+
+
+//read selected template
+app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("whatsappTemplate");
+    res.json({ templateId: user.whatsappTemplate });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch template" });
+  }
+});
 
 
 //notification complete button 

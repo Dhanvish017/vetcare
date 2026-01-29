@@ -58,7 +58,14 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+
+    whatsappTemplate: {
+      type: String,
+      default: "SIMPLE",
+    }
+    
   },
+  
   {
     timestamps: true, // createdAt, updatedAt
   }

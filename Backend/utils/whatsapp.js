@@ -1,16 +1,25 @@
-const twilio = require("twilio");
+const MESSAGE_TEMPLATES = require("./messageTemplates");
 
-const client = twilio(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+/**
+ * Build WhatsApp message based on selected template
+ * @param {String} templateId - template key saved in User (e.g. FRIENDLY_V1)
+ * @param {Object} data - dynamic values
+ */
+function buildWhatsAppMessage(templateId, data) {
+  const template =
+    MESSAGE_TEMPLATES[templateId] || MESSAGE_TEMPLATES.FRIENDLY_V1;
 
-module.exports = async function sendWhatsapp(to, text) {
-  return client.messages.create({
-    from: "whatsapp:+14155238886",  // Sandbox number
-    to: `whatsapp:${to}`,
-    body: text
-  });
+  return template.body
+    .replace(/{{ownerName}}/g, data.ownerName)
+    .replace(/{{petName}}/g, data.petName)
+    .replace(/{{vaccine}}/g, data.vaccine)
+    .replace(/{{dueDate}}/g, data.dueDate)
+    .replace(/{{contact}}/g, data.contact)
+    .replace(/{{clinicName}}/g, data.clinicName)
+    .replace(/{{doctorName}}/g, data.doctorName);
+}
+
+module.exports = {
+  buildWhatsAppMessage,
 };
-
 
