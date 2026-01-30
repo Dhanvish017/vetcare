@@ -307,7 +307,7 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
 
       if (
         !req.body.vaccineInfo.stage ||
-        !["1st", "2nd", "3rd", "4th", "Custom"].includes(req.body.vaccineInfo.stage)
+        !["1st", "2nd", "3rd", "4th","Annual", "Custom"].includes(req.body.vaccineInfo.stage)
       ) {
         return res.status(400).json({
           message: "Invalid or missing vaccine stage",
