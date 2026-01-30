@@ -8,6 +8,7 @@ const app = express();
 const User = require("./models/User");
 const Animal = require("./models/Pet");
 const Owner = require("./models/Owner");
+const messageTemplates = require("./utils/messageTemplates");
 
 const { protect } = require("./middleware/auth");
 
@@ -595,6 +596,21 @@ app.post("/api/notify/whatsapp-template", protect, async (req, res) => {
   }
 });
 
+
+// LIST ALL AVAILABLE TEMPLATES (READ-ONLY)
+app.get("/api/notify/templates", protect, (req, res) => {
+  try {
+    const templates = Object.values(messageTemplates).map(t => ({
+      id: t.id,
+      label: t.label,
+      preview: t.body.slice(0, 120) + "..."
+    }));
+
+    res.json(templates);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to load templates" });
+  }
+});
 
 
 //read selected template
