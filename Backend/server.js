@@ -8,7 +8,6 @@ const app = express();
 const User = require("./models/User");
 const Animal = require("./models/Pet");
 const Owner = require("./models/Owner");
-const messageTemplates = require("./utils/messageTemplates");
 
 const { protect } = require("./middleware/auth");
 
@@ -622,6 +621,37 @@ app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
     res.status(500).json({ message: "Failed to fetch template" });
   }
 });
+
+
+///template reflects in whatsapp because of this code 
+const messageTemplates = require("./utils/messageTemplates");
+
+app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
+  try {
+    const { reminder } = req.body;
+
+    const user = await User.findById(req.user.id);
+    const template = messageTemplates[user.whatsappTemplate];
+
+    if (!template) {
+      return res.status(400).json({ message: "Template not selected" });
+    }
+
+    let message = template.body
+      .replace(/{{ownerName}}/g, reminder.ownerName)
+      .replace(/{{petName}}/g, reminder.petName)
+      .replace(/{{vaccine}}/g, reminder.type)
+      .replace(/{{dueDate}}/g, reminder.dueDate)
+      .replace(/{{contact}}/g, reminder.contact)
+      .replace(/{{clinicName}}/g, "VetCare")
+      .replace(/{{doctorName}}/g, user.name || "Doctor");
+
+    res.json({ message });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to build message" });
+  }
+});
+
 
 
 //notification complete button 
