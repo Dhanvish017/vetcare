@@ -522,9 +522,9 @@ app.get("/api/reminders", protect, async (req, res) => {
     weekEnd.setDate(weekEnd.getDate() + 7);
     weekEnd.setUTCHours(23, 59, 59, 999);
 
-    const animals = await Animal.find({
-      user: req.user.id,
-    });
+    const animals = await Animal.find({ user: req.user.id })
+    .populate("ownerId", "name phone");
+  
 
     const reminders = [];
 
@@ -543,7 +543,10 @@ app.get("/api/reminders", protect, async (req, res) => {
             animalId: animal._id,
             animalName: animal.name,
             species: animal.species,
-            ownerId: animal.ownerId,
+            
+            ownerId: animal.ownerId?._id,
+  ownerName: animal.ownerId?.name || "Pet Owner",
+  ownerPhone: animal.ownerId?.phone || "",
           });
         }
       }
@@ -562,7 +565,10 @@ app.get("/api/reminders", protect, async (req, res) => {
             animalId: animal._id,
             animalName: animal.name,
             species: animal.species,
-            ownerId: animal.ownerId,
+
+            ownerId: animal.ownerId?._id,
+  ownerName: animal.ownerId?.name || "Pet Owner",
+  ownerPhone: animal.ownerId?.phone || "",
           });
         }
       }
