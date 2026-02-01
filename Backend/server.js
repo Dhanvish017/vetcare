@@ -648,10 +648,10 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
       .replace(/{{petName}}/g, reminder.petName)
       .replace(/{{vaccine}}/g, reminder.type)
       .replace(/{{dueDate}}/g, reminder.dueDate)
-      .replace(/{{contact}}/g, reminder.contact)
-      .replace(/{{clinicName}}/g, "VetCare")
+      .replace(/{{contact}}/g, user.phone)
+      .replace(/{{clinicName}}/g, user.clinicName)
       .replace(/{{doctorName}}/g, user.name || "Doctor");
-
+      
     res.json({ message });
   } catch (err) {
     res.status(500).json({ message: "Failed to build message" });

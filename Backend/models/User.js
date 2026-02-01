@@ -62,7 +62,8 @@ const userSchema = new mongoose.Schema(
     whatsappTemplate: {
       type: String,
       default: "SIMPLE",
-    }
+      },
+    
     
   },
   
