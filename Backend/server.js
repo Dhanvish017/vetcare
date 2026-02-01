@@ -235,6 +235,35 @@ app.put("/api/profile", protect, async (req, res) => {
   }
 });
 
+// ---------------------
+// FETCH USER PROFILE
+// ---------------------
+app.get("/api/profile", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select(
+      "-otp -otpExpiresAt -stateId"
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      id: user._id,
+      phone: user.phone,
+      name: user.name,
+      email: user.email,
+      address: user.address,
+      accountType: user.accountType,
+      clinicName: user.clinicName,
+      isProfileComplete: user.isProfileComplete,
+      role: user.role,
+    });
+  } catch (err) {
+    console.error("FETCH PROFILE ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
 
 
 // ---------------------
