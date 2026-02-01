@@ -629,7 +629,7 @@ app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
 });
 
 
-///template reflects in whatsapp because of this code 
+// template reflects in whatsapp because of this code
 const messageTemplates = require("./utils/messageTemplates");
 
 app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
@@ -637,26 +637,47 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
     const { reminder } = req.body;
 
     const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const template = messageTemplates[user.whatsappTemplate];
 
     if (!template) {
       return res.status(400).json({ message: "Template not selected" });
     }
 
+    // ✅ Decide dynamically based on account type
+    const isClinic = user.accountType === "clinic";
+
+    const finalContact = user.phone; // ✅ ALWAYS USER PHONE
+
+    const finalClinicName = isClinic
+      ? user.clinicName
+      : ""; // hide clinic name for doctor accounts
+
+    const finalDoctorName = isClinic
+      ? "" // hide doctor name for clinic accounts
+      : user.name || "Doctor";
+
+    // ✅ Build message safely
     let message = template.body
-      .replace(/{{ownerName}}/g, reminder.ownerName)
-      .replace(/{{petName}}/g, reminder.petName)
-      .replace(/{{vaccine}}/g, reminder.type)
-      .replace(/{{dueDate}}/g, reminder.dueDate)
-      .replace(/{{contact}}/g, user.phone)
-      .replace(/{{clinicName}}/g, user.clinicName)
-      .replace(/{{doctorName}}/g, user.name || "Doctor");
-      
+      .replace(/{{ownerName}}/g, reminder.ownerName || "Pet Owner")
+      .replace(/{{petName}}/g, reminder.petName || "your pet")
+      .replace(/{{vaccine}}/g, reminder.type || "vaccination")
+      .replace(/{{dueDate}}/g, reminder.dueDate || "")
+      .replace(/{{contact}}/g, finalContact)
+      .replace(/{{clinicName}}/g, finalClinicName)
+      .replace(/{{doctorName}}/g, finalDoctorName);
+
     res.json({ message });
   } catch (err) {
+    console.error("BUILD WHATSAPP MESSAGE ERROR:", err);
     res.status(500).json({ message: "Failed to build message" });
   }
 });
+
 
 
 
