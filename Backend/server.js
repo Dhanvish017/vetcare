@@ -176,8 +176,64 @@ app.post("/api/verify-otp", async (req, res) => {
   }
 });
 
+// ---------------------
+// CREATE / UPDATE USER PROFILE
+// ---------------------
+app.put("/api/profile", protect, async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      address,
+      clinicName,
+      accountType, // "clinic" | "individual"
+    } = req.body;
 
+    const user = await User.findById(req.user.id);
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ Update allowed fields only
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (address) user.address = address;
+
+    if (accountType) {
+      user.accountType = accountType;
+
+      // 🏥 Only clinic users have clinicName
+      if (accountType === "clinic") {
+        user.clinicName = clinicName || "";
+      } else {
+        user.clinicName = "";
+      }
+    }
+
+    // ✅ Mark profile complete
+    user.isProfileComplete = true;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Account created successfully",
+      user: {
+        id: user._id,
+        phone: user.phone,
+        name: user.name,
+        email: user.email,
+        accountType: user.accountType,
+        clinicName: user.clinicName,
+        isProfileComplete: user.isProfileComplete,
+      },
+    });
+  } catch (err) {
+    console.error("PROFILE UPDATE ERROR:", err);
+    res.status(500).json({ message: "Failed to create account" });
+  }
+});
 
 
 
