@@ -81,10 +81,21 @@ app.post("/api/send-otp", async (req, res) => {
   try {
     console.log("RAW BODY:", req.body);
 
-    const phone = req.body.phone;
+    let { phone } = req.body;
 
     if (!phone) {
       return res.status(400).json({ message: "Phone missing in request body" });
+    }
+
+    // ✅ NORMALIZE PHONE
+    phone = phone.replace(/\D/g, ""); // remove +, spaces, etc
+
+    if (phone.length === 10) {
+      phone = "91" + phone;
+    }
+
+    if (phone.length !== 12) {
+      return res.status(400).json({ message: "Invalid phone number" });
     }
 
     const otp = "123456";
@@ -106,21 +117,35 @@ app.post("/api/send-otp", async (req, res) => {
 
     console.log("OTP SENT:", phone, otp);
     res.json({ success: true });
-
   } catch (err) {
-    console.error("SEND OTP ERROR:", err.message);
-    res.status(500).json({ message: err.message });
+    console.error("SEND OTP ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
 //verify otp
 app.post("/api/verify-otp", async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    let { phone, otp } = req.body;
 
-    // 🔥 FIND BY PHONE
+    if (!phone || !otp) {
+      return res.status(400).json({ message: "Phone or OTP missing" });
+    }
+
+    // ✅ SAME NORMALIZATION
+    phone = phone.replace(/\D/g, "");
+
+    if (phone.length === 10) {
+      phone = "91" + phone;
+    }
+
+    if (phone.length !== 12) {
+      return res.status(400).json({ message: "Invalid phone number" });
+    }
+
     const user = await User.findOne({ phone });
 
     if (!user) {
@@ -141,7 +166,7 @@ app.post("/api/verify-otp", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // clear OTP after success
+    // ✅ Clear OTP
     user.otp = null;
     user.otpExpiresAt = null;
     await user.save();
@@ -149,12 +174,13 @@ app.post("/api/verify-otp", async (req, res) => {
     res.json({
       token,
       isProfileComplete: user.isProfileComplete,
-    });    
+    });
   } catch (err) {
-    console.error(err);
+    console.error("VERIFY OTP ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 // CREATE ACCOUNT
