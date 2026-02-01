@@ -76,7 +76,9 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// send otp
+
+
+/// SEND OTP (DEV MODE)
 app.post("/api/send-otp", async (req, res) => {
   try {
     let { phone } = req.body;
@@ -92,42 +94,37 @@ app.post("/api/send-otp", async (req, res) => {
       return res.status(400).json({ message: "Invalid phone number" });
     }
 
-    // 📡 Send OTP via MojoAuth
-    const response = await axios.post(
-      "https://api.mojoauth.com/login/otp",
-      {
-        phone_number: phone,
-      },
-      {
-        headers: {
-          "X-API-Key": process.env.MOJOAUTH_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const otp = "1234";
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 min
 
-    const { state_id } = response.data;
-
-    // 👤 Create / Update user
     let user = await User.findOne({ phone });
 
     if (!user) {
-      user = await User.create({ phone, stateId: state_id });
+      user = await User.create({
+        phone,
+        otp,
+        otpExpiresAt: expiresAt,
+        isProfileComplete: false,
+      });
     } else {
-      user.stateId = state_id;
+      user.otp = otp;
+      user.otpExpiresAt = expiresAt;
       await user.save();
     }
 
+    console.log("DEV OTP SENT:", phone, otp);
+
     res.json({ success: true });
   } catch (err) {
-    console.error("SEND OTP ERROR:", err.response?.data || err);
+    console.error("SEND OTP ERROR:", err);
     res.status(500).json({ message: "OTP send failed" });
   }
 });
 
 
 
-// VERIFY OTP
+
+// VERIFY OTP (DEV MODE)
 app.post("/api/verify-otp", async (req, res) => {
   try {
     let { phone, otp } = req.body;
@@ -144,33 +141,29 @@ app.post("/api/verify-otp", async (req, res) => {
     }
 
     const user = await User.findOne({ phone });
-    if (!user || !user.stateId) {
-      return res.status(404).json({ message: "OTP session not found" });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // 📡 Verify OTP with MojoAuth
-    await axios.post(
-      "https://api.mojoauth.com/login/otp/verify",
-      {
-        state_id: user.stateId,
-        otp,
-      },
-      {
-        headers: {
-          "X-API-Key": process.env.MOJOAUTH_API_KEY,
-        },
-      }
-    );
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
 
-    // 🔐 Issue your JWT
+    if (user.otpExpiresAt < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // 🔐 Issue JWT
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "dev_secret",
       { expiresIn: "7d" }
     );
 
-    // 🧹 Clear stateId
-    user.stateId = null;
+    // 🧹 Clear OTP
+    user.otp = null;
+    user.otpExpiresAt = null;
     await user.save();
 
     res.json({
@@ -178,10 +171,11 @@ app.post("/api/verify-otp", async (req, res) => {
       isProfileComplete: user.isProfileComplete,
     });
   } catch (err) {
-    console.error("VERIFY OTP ERROR:", err.response?.data || err);
-    res.status(401).json({ message: "Invalid or expired OTP" });
+    console.error("VERIFY OTP ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
@@ -371,7 +365,6 @@ app.get("/api/owners/:id", protect, async (req, res) => {
   }
   
 });
-
 
 
 
