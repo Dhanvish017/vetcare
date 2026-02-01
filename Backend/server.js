@@ -642,7 +642,10 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const template = messageTemplates[user.whatsappTemplate];
+    // ✅ FALLBACK TEMPLATE //default template
+    const template =
+      messageTemplates[user.whatsappTemplate] ||
+      messageTemplates.FRIENDLY_V1;
 
     if (!template) {
       return res.status(400).json({ message: "Template not selected" });
