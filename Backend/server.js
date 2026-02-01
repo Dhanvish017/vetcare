@@ -79,54 +79,55 @@ app.post("/signup", async (req, res) => {
 // send otp
 app.post("/api/send-otp", async (req, res) => {
   try {
-    console.log("RAW BODY:", req.body);
-
     let { phone } = req.body;
 
     if (!phone) {
-      return res.status(400).json({ message: "Phone missing in request body" });
+      return res.status(400).json({ message: "Phone missing" });
     }
 
-    // ✅ NORMALIZE PHONE
-    phone = phone.replace(/\D/g, ""); // remove +, spaces, etc
-
-    if (phone.length === 10) {
-      phone = "91" + phone;
-    }
-
+    // ✅ Normalize phone
+    phone = phone.replace(/\D/g, "");
+    if (phone.length === 10) phone = "91" + phone;
     if (phone.length !== 12) {
       return res.status(400).json({ message: "Invalid phone number" });
     }
 
-    const otp = "123456";
-    const expires = Date.now() + 5 * 60 * 1000;
+    // 📡 Send OTP via MojoAuth
+    const response = await axios.post(
+      "https://api.mojoauth.com/login/otp",
+      {
+        phone_number: phone,
+      },
+      {
+        headers: {
+          "X-API-Key": process.env.MOJOAUTH_API_KEY,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
+    const { state_id } = response.data;
+
+    // 👤 Create / Update user
     let user = await User.findOne({ phone });
 
     if (!user) {
-      user = await User.create({
-        phone,
-        otp,
-        otpExpiresAt: expires,
-      });
+      user = await User.create({ phone, stateId: state_id });
     } else {
-      user.otp = otp;
-      user.otpExpiresAt = expires;
+      user.stateId = state_id;
       await user.save();
     }
 
-    console.log("OTP SENT:", phone, otp);
     res.json({ success: true });
   } catch (err) {
-    console.error("SEND OTP ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("SEND OTP ERROR:", err.response?.data || err);
+    res.status(500).json({ message: "OTP send failed" });
   }
 });
 
 
 
-
-//verify otp
+// VERIFY OTP
 app.post("/api/verify-otp", async (req, res) => {
   try {
     let { phone, otp } = req.body;
@@ -135,40 +136,41 @@ app.post("/api/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "Phone or OTP missing" });
     }
 
-    // ✅ SAME NORMALIZATION
+    // ✅ Normalize phone
     phone = phone.replace(/\D/g, "");
-
-    if (phone.length === 10) {
-      phone = "91" + phone;
-    }
-
+    if (phone.length === 10) phone = "91" + phone;
     if (phone.length !== 12) {
       return res.status(400).json({ message: "Invalid phone number" });
     }
 
     const user = await User.findOne({ phone });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!user || !user.stateId) {
+      return res.status(404).json({ message: "OTP session not found" });
     }
 
-    if (user.otp !== otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
+    // 📡 Verify OTP with MojoAuth
+    await axios.post(
+      "https://api.mojoauth.com/login/otp/verify",
+      {
+        state_id: user.stateId,
+        otp,
+      },
+      {
+        headers: {
+          "X-API-Key": process.env.MOJOAUTH_API_KEY,
+        },
+      }
+    );
 
-    if (user.otpExpiresAt < Date.now()) {
-      return res.status(400).json({ message: "OTP expired" });
-    }
-
+    // 🔐 Issue your JWT
     const token = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET || "dev_secret",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // ✅ Clear OTP
-    user.otp = null;
-    user.otpExpiresAt = null;
+    // 🧹 Clear stateId
+    user.stateId = null;
     await user.save();
 
     res.json({
@@ -176,66 +178,11 @@ app.post("/api/verify-otp", async (req, res) => {
       isProfileComplete: user.isProfileComplete,
     });
   } catch (err) {
-    console.error("VERIFY OTP ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("VERIFY OTP ERROR:", err.response?.data || err);
+    res.status(401).json({ message: "Invalid or expired OTP" });
   }
 });
 
-
-
-// CREATE ACCOUNT
-app.put("/api/profile", protect, async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      address,
-      clinicName,
-      accountType,
-    } = req.body;
-
-    // BASIC VALIDATION
-    if (!name || !email || !address || !accountType) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    if (accountType === "clinic" && !clinicName) {
-      return res.status(400).json({ message: "Clinic name required" });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      {
-        name,
-        email,
-        address,
-        clinicName: accountType === "clinic" ? clinicName : null,
-        accountType,
-        isProfileComplete: true, // VERY IMPORTANT
-      },
-      { new: true }
-    );
-
-    res.json({
-      success: true,
-      user,
-    });
-  } catch (err) {
-    console.error("PROFILE UPDATE ERROR:", err);
-    res.status(500).json({ message: "Profile update failed" });
-  }
-});
-
-
-// GET PROFILE
-app.get("/api/profile", protect, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-otp -otpExpiresAt");
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch profile" });
-  }
-});
 
 
 

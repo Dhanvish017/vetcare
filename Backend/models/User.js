@@ -64,8 +64,13 @@ const userSchema = new mongoose.Schema(
       default: "SIMPLE",
       },
     
+      stateId: {
+        type: String,
+      }
+      
     
   },
+  
   
   {
     timestamps: true, // createdAt, updatedAt
