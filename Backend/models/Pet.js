@@ -91,6 +91,15 @@ const animalSchema = new mongoose.Schema(
       nextVaccineDate: {
         type: Date,
       },
+
+      lastVaccineDate: {
+        type: Date,
+      },
+
+      thankYouSent: {
+        type: Boolean,
+        default: false,
+      },
     },
 
     /* =========================
@@ -116,6 +125,17 @@ const animalSchema = new mongoose.Schema(
       nextDewormingDate: {
         type: Date,
       },
+
+      // ✅ ADD THIS
+  lastDewormingDate: {
+    type: Date,
+  },
+
+  // ✅ ADD THIS
+  thankYouSent: {
+    type: Boolean,
+    default: false,
+  },
     },
     /* =========================
        📜 ACTIVITY HISTORY

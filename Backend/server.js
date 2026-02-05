@@ -562,75 +562,252 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 });
 
 // ---------------------
-// REMINDERS: NEXT 7 DAYS
+// NOTIFICATIONS: TODAY | YESTERDAY | 7TH DAY
 // ---------------------
-app.get("/api/reminders", protect, async (req, res) => {
+app.get("/api/notifications", protect, async (req, res) => {
   try {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
 
-    const weekEnd = new Date(today);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-    weekEnd.setUTCHours(23, 59, 59, 999);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const seventhDay = new Date(today);
+    seventhDay.setDate(seventhDay.getDate() + 7);
 
     const animals = await Animal.find({ user: req.user.id })
-    .populate("ownerId", "name phone");
-  
+      .populate("ownerId", "name phone");
 
-    const reminders = [];
+    const notifications = {
+      today: [],
+      yesterday: [],
+      seventhDay: [],
+    };
 
     animals.forEach((animal) => {
+
+      // -----------------
       // 💉 VACCINE
+      // -----------------
       if (
         animal.vaccineInfo?.nextVaccineDate &&
         animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        const date = new Date(animal.vaccineInfo.nextVaccineDate);
-        if (date >= today && date <= weekEnd) {
-          reminders.push({
-            _id: `${animal._id}-vaccine`,
-            type: "vaccine",
-            dueDate: date,
-            animalId: animal._id,
-            animalName: animal.name,
-            species: animal.species,
-            
-            ownerId: animal.ownerId?._id,
-  ownerName: animal.ownerId?.name || "Pet Owner",
-  ownerPhone: animal.ownerId?.phone || "",
-          });
+        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
+
+        const payload = {
+          _id: `${animal._id}-vaccine`,
+          type: "vaccine",
+          dueDate,
+          animalId: animal._id,
+          animalName: animal.name,
+          species: animal.species,
+          ownerId: animal.ownerId?._id,
+          ownerName: animal.ownerId?.name || "Pet Owner",
+          ownerPhone: animal.ownerId?.phone || "",
+        };
+
+        if (dueDate.getTime() === today.getTime()) {
+          notifications.today.push(payload);
+        }
+
+        if (dueDate.getTime() === yesterday.getTime()) {
+          notifications.yesterday.push(payload);
+        }
+
+        if (dueDate.getTime() === seventhDay.getTime()) {
+          notifications.seventhDay.push(payload);
         }
       }
 
+      // -----------------
       // 🪱 DEWORMING
+      // -----------------
       if (
         animal.dewormingInfo?.nextDewormingDate &&
         animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        const date = new Date(animal.dewormingInfo.nextDewormingDate);
-        if (date >= today && date <= weekEnd) {
-          reminders.push({
-            _id: `${animal._id}-deworming`,
-            type: "deworming",
-            dueDate: date,
+        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
+
+        const payload = {
+          _id: `${animal._id}-deworming`,
+          type: "deworming",
+          dueDate,
+          animalId: animal._id,
+          animalName: animal.name,
+          species: animal.species,
+          ownerId: animal.ownerId?._id,
+          ownerName: animal.ownerId?.name || "Pet Owner",
+          ownerPhone: animal.ownerId?.phone || "",
+        };
+
+        if (dueDate.getTime() === today.getTime()) {
+          notifications.today.push(payload);
+        }
+
+        if (dueDate.getTime() === yesterday.getTime()) {
+          notifications.yesterday.push(payload);
+        }
+
+        if (dueDate.getTime() === seventhDay.getTime()) {
+          notifications.seventhDay.push(payload);
+        }
+      }
+    });
+
+    res.json(notifications);
+  } catch (err) {
+    console.error("NOTIFICATION ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+});
+
+
+
+// ---------------------
+// MISSED MESSAGES (3rd day only)
+// ---------------------
+app.get("/api/notifications/missed", protect, async (req, res) => {
+  try {
+    const today = startOfDay(new Date());
+
+    const animals = await Animal.find({ user: req.user.id })
+      .populate("ownerId", "name phone");
+
+    const missed = [];
+
+    animals.forEach((animal) => {
+
+      // 💉 VACCINE MISSED
+      if (
+        animal.vaccineInfo?.nextVaccineDate &&
+        animal.vaccineInfo.vaccineStatus === "pending"
+      ) {
+        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
+        const thirdDay = new Date(dueDate);
+        thirdDay.setDate(thirdDay.getDate() + 3);
+
+        if (thirdDay.getTime() === today.getTime()) {
+          missed.push({
+            _id: `${animal._id}-vaccine-missed`,
+            type: "vaccine",
+            dueDate,
+            missedDays: 3,
             animalId: animal._id,
             animalName: animal.name,
             species: animal.species,
-
             ownerId: animal.ownerId?._id,
-  ownerName: animal.ownerId?.name || "Pet Owner",
-  ownerPhone: animal.ownerId?.phone || "",
+            ownerName: animal.ownerId?.name || "Pet Owner",
+            ownerPhone: animal.ownerId?.phone || "",
+          });
+        }
+      }
+
+      // 🪱 DEWORMING MISSED
+      if (
+        animal.dewormingInfo?.nextDewormingDate &&
+        animal.dewormingInfo.dewormingStatus === "pending"
+      ) {
+        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
+        const thirdDay = new Date(dueDate);
+        thirdDay.setDate(thirdDay.getDate() + 3);
+
+        if (thirdDay.getTime() === today.getTime()) {
+          missed.push({
+            _id: `${animal._id}-deworming-missed`,
+            type: "deworming",
+            dueDate,
+            missedDays: 3,
+            animalId: animal._id,
+            animalName: animal.name,
+            species: animal.species,
+            ownerId: animal.ownerId?._id,
+            ownerName: animal.ownerId?.name || "Pet Owner",
+            ownerPhone: animal.ownerId?.phone || "",
           });
         }
       }
     });
 
-    res.json(reminders);
+    res.json(missed);
   } catch (err) {
-    console.error("REMINDER ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch reminders" });
+    console.error("MISSED ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch missed messages" });
   }
 });
+
+
+// ---------------------
+// MISSED MESSAGES (3rd day only)
+// ---------------------
+app.get("/api/notifications/missed", protect, async (req, res) => {
+  try {
+    const today = startOfDay(new Date());
+
+    const animals = await Animal.find({ user: req.user.id })
+      .populate("ownerId", "name phone");
+
+    const missed = [];
+
+    animals.forEach((animal) => {
+
+      // 💉 VACCINE MISSED
+      if (
+        animal.vaccineInfo?.nextVaccineDate &&
+        animal.vaccineInfo.vaccineStatus === "pending"
+      ) {
+        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
+        const thirdDay = new Date(dueDate);
+        thirdDay.setDate(thirdDay.getDate() + 3);
+
+        if (thirdDay.getTime() === today.getTime()) {
+          missed.push({
+            _id: `${animal._id}-vaccine-missed`,
+            type: "vaccine",
+            dueDate,
+            missedDays: 3,
+            animalId: animal._id,
+            animalName: animal.name,
+            species: animal.species,
+            ownerId: animal.ownerId?._id,
+            ownerName: animal.ownerId?.name || "Pet Owner",
+            ownerPhone: animal.ownerId?.phone || "",
+          });
+        }
+      }
+
+      // 🪱 DEWORMING MISSED
+      if (
+        animal.dewormingInfo?.nextDewormingDate &&
+        animal.dewormingInfo.dewormingStatus === "pending"
+      ) {
+        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
+        const thirdDay = new Date(dueDate);
+        thirdDay.setDate(thirdDay.getDate() + 3);
+
+        if (thirdDay.getTime() === today.getTime()) {
+          missed.push({
+            _id: `${animal._id}-deworming-missed`,
+            type: "deworming",
+            dueDate,
+            missedDays: 3,
+            animalId: animal._id,
+            animalName: animal.name,
+            species: animal.species,
+            ownerId: animal.ownerId?._id,
+            ownerName: animal.ownerId?.name || "Pet Owner",
+            ownerPhone: animal.ownerId?.phone || "",
+          });
+        }
+      }
+    });
+
+    res.json(missed);
+  } catch (err) {
+    console.error("MISSED ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch missed messages" });
+  }
+});
+
 
 
 /// notification template 
@@ -735,52 +912,81 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
 
 
 
-//notification complete button 
-app.patch("/api/animals/:animalId/complete", protect, async (req, res) => {
-  try {
-    const { type } = req.body;
+// ---------------------
+// SEND WHATSAPP + COMPLETE VISIT
+// ---------------------
+app.post(
+  "/api/notifications/send-whatsapp/:animalId",
+  protect,
+  async (req, res) => {
+    try {
+      const { type } = req.body; // "vaccine" | "deworming"
 
-    const animal = await Animal.findOne({
-      _id: req.params.animalId,
-      user: req.user.id,
-    });
+      const animal = await Animal.findOne({
+        _id: req.params.animalId,
+        user: req.user.id,
+      }).populate("ownerId", "name phone");
 
-    if (!animal) {
-      return res.status(404).json({ message: "Animal not found" });
-    }
+      if (!animal) {
+        return res.status(404).json({ message: "Animal not found" });
+      }
 
-    // 🔥 TEMP SAFETY FOR OLD RECORDS
-    if (!animal.ownerId) {
-      return res.status(400).json({
-        message: "Animal missing ownerId. Please re-add animal.",
+      if (!animal.ownerId) {
+        return res.status(400).json({
+          message: "Animal missing ownerId",
+        });
+      }
+
+      const today = new Date();
+
+      // -----------------
+      // 💉 VACCINE
+      // -----------------
+      if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
+        // history
+        animal.vaccineHistory.push({
+          vaccineType: animal.vaccineInfo.vaccineType,
+          stage: animal.vaccineInfo.stage || "",
+          status: "completed",
+          date: today,
+        });
+
+        // mark completed
+        animal.vaccineInfo.vaccineStatus = "completed";
+        animal.vaccineInfo.lastVaccineDate = today;
+        animal.vaccineInfo.thankYouSent = true;
+      }
+
+      // -----------------
+      // 🪱 DEWORMING
+      // -----------------
+      if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
+        animal.dewormingHistory.push({
+          dewormingName: animal.dewormingInfo.dewormingName,
+          date: today,
+        });
+
+        animal.dewormingInfo.dewormingStatus = "completed";
+        animal.dewormingInfo.lastDewormingDate = today;
+        animal.dewormingInfo.thankYouSent = true;
+      }
+
+      await animal.save();
+
+      // 🔔 WhatsApp API will be plugged here later
+      // sendWhatsApp(animal.ownerId.phone, message)
+
+      res.json({
+        success: true,
+        message: "WhatsApp sent and visit marked as completed",
       });
+    } catch (err) {
+      console.error("SEND WHATSAPP ERROR:", err);
+      res.status(500).json({ message: "Server error" });
     }
-
-    if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
-      animal.vaccineHistory.push({
-        vaccineType: animal.vaccineInfo.vaccineType,
-        stage: animal.vaccineInfo.stage || "",
-        date: animal.vaccineInfo.nextVaccineDate || new Date(),
-        status: "completed",
-      });
-      animal.vaccineInfo.vaccineStatus = "completed";
-    }
-
-    if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
-      animal.dewormingHistory.push({
-        dewormingName: animal.dewormingInfo.dewormingName,
-        date: animal.dewormingInfo.nextDewormingDate || new Date(),
-      });
-      animal.dewormingInfo.dewormingStatus = "completed";
-    }
-
-    await animal.save();
-    res.json({ success: true });
-  } catch (err) {
-    console.error("COMPLETE ERROR:", err);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
+
 
 
 
