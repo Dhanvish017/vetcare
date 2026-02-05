@@ -14,6 +14,12 @@ const { protect } = require("./middleware/auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const startOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
 
 
 
