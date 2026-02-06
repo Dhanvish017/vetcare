@@ -699,7 +699,13 @@ app.get("/api/notifications", protect, async (req, res) => {
 // ---------------------
 app.get("/api/notifications/missed", protect, async (req, res) => {
   try {
-    const today = startOfDay(new Date());
+    const now = new Date();
+
+    // optional but recommended for IST
+    // now.setMinutes(now.getMinutes() + 330);
+
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
 
     const animals = await Animal.find({ user: req.user.id })
       .populate("ownerId", "name phone");
@@ -708,16 +714,22 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
 
     animals.forEach((animal) => {
 
+      // =================
       // 💉 VACCINE MISSED
+      // =================
       if (
         animal.vaccineInfo?.nextVaccineDate &&
         animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
+        const dueDate = new Date(animal.vaccineInfo.nextVaccineDate);
+
         const thirdDay = new Date(dueDate);
         thirdDay.setDate(thirdDay.getDate() + 3);
 
-        if (thirdDay.getTime() === today.getTime()) {
+        const thirdDayStart = startOfDay(thirdDay);
+        const thirdDayEnd = endOfDay(thirdDay);
+
+        if (todayStart >= thirdDayStart && todayEnd <= thirdDayEnd) {
           missed.push({
             _id: `${animal._id}-vaccine-missed`,
             type: "vaccine",
@@ -733,16 +745,22 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
         }
       }
 
+      // =================
       // 🪱 DEWORMING MISSED
+      // =================
       if (
         animal.dewormingInfo?.nextDewormingDate &&
         animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
+        const dueDate = new Date(animal.dewormingInfo.nextDewormingDate);
+
         const thirdDay = new Date(dueDate);
         thirdDay.setDate(thirdDay.getDate() + 3);
 
-        if (thirdDay.getTime() === today.getTime()) {
+        const thirdDayStart = startOfDay(thirdDay);
+        const thirdDayEnd = endOfDay(thirdDay);
+
+        if (todayStart >= thirdDayStart && todayEnd <= thirdDayEnd) {
           missed.push({
             _id: `${animal._id}-deworming-missed`,
             type: "deworming",
@@ -766,12 +784,21 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
   }
 });
 
+
+
+
 // ---------------------
 // THANK YOU LIST (TODAY)
 // ---------------------
 app.get("/api/notifications/thank-you", protect, async (req, res) => {
   try {
-    const today = startOfDay(new Date());
+    const now = new Date();
+
+    // optional: IST-safe (recommended)
+    // now.setMinutes(now.getMinutes() + 330);
+
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
 
     const animals = await Animal.find({ user: req.user.id })
       .populate("ownerId", "name phone");
@@ -786,9 +813,9 @@ app.get("/api/notifications/thank-you", protect, async (req, res) => {
         animal.vaccineInfo.lastVaccineDate &&
         !animal.vaccineInfo.thankYouSent
       ) {
-        const completedDate = startOfDay(animal.vaccineInfo.lastVaccineDate);
+        const completedDate = new Date(animal.vaccineInfo.lastVaccineDate);
 
-        if (completedDate.getTime() === today.getTime()) {
+        if (completedDate >= todayStart && completedDate <= todayEnd) {
           thankYou.push({
             _id: `${animal._id}-vaccine-thanks`,
             type: "vaccine",
@@ -806,9 +833,9 @@ app.get("/api/notifications/thank-you", protect, async (req, res) => {
         animal.dewormingInfo.lastDewormingDate &&
         !animal.dewormingInfo.thankYouSent
       ) {
-        const completedDate = startOfDay(animal.dewormingInfo.lastDewormingDate);
+        const completedDate = new Date(animal.dewormingInfo.lastDewormingDate);
 
-        if (completedDate.getTime() === today.getTime()) {
+        if (completedDate >= todayStart && completedDate <= todayEnd) {
           thankYou.push({
             _id: `${animal._id}-deworming-thanks`,
             type: "deworming",
