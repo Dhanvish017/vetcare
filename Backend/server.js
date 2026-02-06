@@ -378,9 +378,14 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
         vaccineType: req.body.vaccineInfo.vaccineType,
         stage: req.body.vaccineInfo.stage,
         customStage: req.body.vaccineInfo.customStage || "",
+      
+        nextVaccineDate: req.body.vaccineInfo.nextVaccineDate || null,
+        lastVaccineDate: null,
+      
         vaccineStatus: "pending",
-        nextVaccineDate: req.body.vaccineInfo.nextVaccineDate,
+        thankYouSent: false,
       };
+      
       
     }
 
@@ -398,9 +403,14 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
       animal.dewormingInfo = {
         presentDewormingName: req.body.dewormingInfo.presentDewormingName || "",
         dewormingName: req.body.dewormingInfo.dewormingName || "",
-        nextDewormingDate: req.body.dewormingInfo.nextDewormingDate,
+      
+        nextDewormingDate: req.body.dewormingInfo.nextDewormingDate || null,
+        lastDewormingDate: null,
+      
         dewormingStatus: "pending",
+        thankYouSent: false,
       };
+      
     }
 
     
