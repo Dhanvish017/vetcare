@@ -741,65 +741,54 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
   }
 });
 
-
 // ---------------------
-// MISSED MESSAGES (3rd day only)
+// THANK YOU LIST (TODAY)
 // ---------------------
-app.get("/api/notifications/missed", protect, async (req, res) => {
+app.get("/api/notifications/thank-you", protect, async (req, res) => {
   try {
     const today = startOfDay(new Date());
 
     const animals = await Animal.find({ user: req.user.id })
       .populate("ownerId", "name phone");
 
-    const missed = [];
+    const thankYou = [];
 
     animals.forEach((animal) => {
 
-      // 💉 VACCINE MISSED
+      // 💉 VACCINE
       if (
-        animal.vaccineInfo?.nextVaccineDate &&
-        animal.vaccineInfo.vaccineStatus === "pending"
+        animal.vaccineInfo?.vaccineStatus === "completed" &&
+        animal.vaccineInfo.lastVaccineDate &&
+        !animal.vaccineInfo.thankYouSent
       ) {
-        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
-        const thirdDay = new Date(dueDate);
-        thirdDay.setDate(thirdDay.getDate() + 3);
+        const completedDate = startOfDay(animal.vaccineInfo.lastVaccineDate);
 
-        if (thirdDay.getTime() === today.getTime()) {
-          missed.push({
-            _id: `${animal._id}-vaccine-missed`,
+        if (completedDate.getTime() === today.getTime()) {
+          thankYou.push({
+            _id: `${animal._id}-vaccine-thanks`,
             type: "vaccine",
-            dueDate,
-            missedDays: 3,
             animalId: animal._id,
             animalName: animal.name,
-            species: animal.species,
-            ownerId: animal.ownerId?._id,
             ownerName: animal.ownerId?.name || "Pet Owner",
             ownerPhone: animal.ownerId?.phone || "",
           });
         }
       }
 
-      // 🪱 DEWORMING MISSED
+      // 🪱 DEWORMING
       if (
-        animal.dewormingInfo?.nextDewormingDate &&
-        animal.dewormingInfo.dewormingStatus === "pending"
+        animal.dewormingInfo?.dewormingStatus === "completed" &&
+        animal.dewormingInfo.lastDewormingDate &&
+        !animal.dewormingInfo.thankYouSent
       ) {
-        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
-        const thirdDay = new Date(dueDate);
-        thirdDay.setDate(thirdDay.getDate() + 3);
+        const completedDate = startOfDay(animal.dewormingInfo.lastDewormingDate);
 
-        if (thirdDay.getTime() === today.getTime()) {
-          missed.push({
-            _id: `${animal._id}-deworming-missed`,
+        if (completedDate.getTime() === today.getTime()) {
+          thankYou.push({
+            _id: `${animal._id}-deworming-thanks`,
             type: "deworming",
-            dueDate,
-            missedDays: 3,
             animalId: animal._id,
             animalName: animal.name,
-            species: animal.species,
-            ownerId: animal.ownerId?._id,
             ownerName: animal.ownerId?.name || "Pet Owner",
             ownerPhone: animal.ownerId?.phone || "",
           });
@@ -807,12 +796,13 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
       }
     });
 
-    res.json(missed);
+    res.json(thankYou);
   } catch (err) {
-    console.error("MISSED ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch missed messages" });
+    console.error("THANK YOU ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch thank you list" });
   }
 });
+
 
 
 
