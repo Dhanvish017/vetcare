@@ -20,6 +20,12 @@ const startOfDay = (date) => {
   return d;
 };
 
+const endOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
 
 
 
@@ -582,14 +588,22 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 // ---------------------
 app.get("/api/notifications", protect, async (req, res) => {
   try {
-    const today = startOfDay(new Date());
+    // Base dates
+    const today = new Date();
+    const todayStart = startOfDay(today);
+    const todayEnd = endOfDay(today);
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStart = startOfDay(yesterday);
+    const yesterdayEnd = endOfDay(yesterday);
 
     const seventhDay = new Date(today);
     seventhDay.setDate(seventhDay.getDate() + 7);
+    const seventhStart = startOfDay(seventhDay);
+    const seventhEnd = endOfDay(seventhDay);
 
+    // Fetch animals
     const animals = await Animal.find({ user: req.user.id })
       .populate("ownerId", "name phone");
 
@@ -601,14 +615,14 @@ app.get("/api/notifications", protect, async (req, res) => {
 
     animals.forEach((animal) => {
 
-      // -----------------
+      // =================
       // 💉 VACCINE
-      // -----------------
+      // =================
       if (
         animal.vaccineInfo?.nextVaccineDate &&
         animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        const dueDate = startOfDay(animal.vaccineInfo.nextVaccineDate);
+        const dueDate = new Date(animal.vaccineInfo.nextVaccineDate);
 
         const payload = {
           _id: `${animal._id}-vaccine`,
@@ -622,27 +636,27 @@ app.get("/api/notifications", protect, async (req, res) => {
           ownerPhone: animal.ownerId?.phone || "",
         };
 
-        if (dueDate.getTime() === today.getTime()) {
+        if (dueDate >= todayStart && dueDate <= todayEnd) {
           notifications.today.push(payload);
         }
 
-        if (dueDate.getTime() === yesterday.getTime()) {
+        if (dueDate >= yesterdayStart && dueDate <= yesterdayEnd) {
           notifications.yesterday.push(payload);
         }
 
-        if (dueDate.getTime() === seventhDay.getTime()) {
+        if (dueDate >= seventhStart && dueDate <= seventhEnd) {
           notifications.seventhDay.push(payload);
         }
       }
 
-      // -----------------
+      // =================
       // 🪱 DEWORMING
-      // -----------------
+      // =================
       if (
         animal.dewormingInfo?.nextDewormingDate &&
         animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        const dueDate = startOfDay(animal.dewormingInfo.nextDewormingDate);
+        const dueDate = new Date(animal.dewormingInfo.nextDewormingDate);
 
         const payload = {
           _id: `${animal._id}-deworming`,
@@ -656,15 +670,15 @@ app.get("/api/notifications", protect, async (req, res) => {
           ownerPhone: animal.ownerId?.phone || "",
         };
 
-        if (dueDate.getTime() === today.getTime()) {
+        if (dueDate >= todayStart && dueDate <= todayEnd) {
           notifications.today.push(payload);
         }
 
-        if (dueDate.getTime() === yesterday.getTime()) {
+        if (dueDate >= yesterdayStart && dueDate <= yesterdayEnd) {
           notifications.yesterday.push(payload);
         }
 
-        if (dueDate.getTime() === seventhDay.getTime()) {
+        if (dueDate >= seventhStart && dueDate <= seventhEnd) {
           notifications.seventhDay.push(payload);
         }
       }
@@ -676,6 +690,7 @@ app.get("/api/notifications", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 });
+
 
 
 
