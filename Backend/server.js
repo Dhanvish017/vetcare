@@ -14,6 +14,8 @@ const { protect } = require("./middleware/auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const IST_OFFSET_MINUTES = 330;
+
 const startOfDay = (date) => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -26,6 +28,11 @@ const endOfDay = (date) => {
   return d;
 };
 
+const getISTDate = (date = new Date()) => {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES);
+  return d;
+};
 
 
 
@@ -589,16 +596,16 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
 app.get("/api/notifications", protect, async (req, res) => {
   try {
     // Base dates
-    const today = new Date();
+    const today = getISTDate();
     const todayStart = startOfDay(today);
     const todayEnd = endOfDay(today);
 
-    const yesterday = new Date(today);
+    const yesterday = getISTDate(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStart = startOfDay(yesterday);
     const yesterdayEnd = endOfDay(yesterday);
 
-    const seventhDay = new Date(today);
+    const seventhDay = getISTDate(today);
     seventhDay.setDate(seventhDay.getDate() + 7);
     const seventhStart = startOfDay(seventhDay);
     const seventhEnd = endOfDay(seventhDay);
@@ -699,7 +706,7 @@ app.get("/api/notifications", protect, async (req, res) => {
 // ---------------------
 app.get("/api/notifications/missed", protect, async (req, res) => {
   try {
-    const now = new Date();
+    const now = getISTDate();
 
     // optional but recommended for IST
     // now.setMinutes(now.getMinutes() + 330);
@@ -729,7 +736,7 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
         const thirdDayStart = startOfDay(thirdDay);
         const thirdDayEnd = endOfDay(thirdDay);
 
-        if (todayStart >= thirdDayStart && todayEnd <= thirdDayEnd) {
+        if (todayStart >= thirdDayStart && todayStart <= thirdDayEnd) {
           missed.push({
             _id: `${animal._id}-vaccine-missed`,
             type: "vaccine",
@@ -760,7 +767,7 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
         const thirdDayStart = startOfDay(thirdDay);
         const thirdDayEnd = endOfDay(thirdDay);
 
-        if (todayStart >= thirdDayStart && todayEnd <= thirdDayEnd) {
+        if (todayStart >= thirdDayStart && todayStart <= thirdDayEnd) {
           missed.push({
             _id: `${animal._id}-deworming-missed`,
             type: "deworming",
@@ -792,7 +799,7 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
 // ---------------------
 app.get("/api/notifications/thank-you", protect, async (req, res) => {
   try {
-    const now = new Date();
+    const now = getISTDate();
 
     // optional: IST-safe (recommended)
     // now.setMinutes(now.getMinutes() + 330);
@@ -985,7 +992,7 @@ app.post(
         });
       }
 
-      const today = new Date();
+      const today = getISTDate();
 
       // -----------------
       // 💉 VACCINE
