@@ -651,7 +651,9 @@ app.get("/api/notifications", protect, async (req, res) => {
           notifications.yesterday.push(payload);
         }
 
-        if (dueDate >= seventhStart && dueDate <= seventhEnd) {
+        if (
+          startOfDay(dueDate).getTime() === startOfDay(seventhDay).getTime()
+        ) {
           notifications.seventhDay.push(payload);
         }
       }
@@ -685,7 +687,9 @@ app.get("/api/notifications", protect, async (req, res) => {
           notifications.yesterday.push(payload);
         }
 
-        if (dueDate >= seventhStart && dueDate <= seventhEnd) {
+        if (
+          startOfDay(dueDate).getTime() === startOfDay(seventhDay).getTime()
+        ) {
           notifications.seventhDay.push(payload);
         }
       }
