@@ -145,7 +145,10 @@ const animalSchema = new mongoose.Schema(
       {
         vaccineType: String,
         stage: String,
-        status: String,
+        status: {
+          type: String,
+          enum: ["completed", "missed"],
+        },
         date: Date,
         createdAt: {
           type: Date,
@@ -157,6 +160,10 @@ const animalSchema = new mongoose.Schema(
     dewormingHistory: [
       {
         dewormingName: String,
+        status: {
+          type: String,
+          enum: ["completed", "missed"],
+        },
         date: Date,
         createdAt: {
           type: Date,

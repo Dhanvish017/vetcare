@@ -711,10 +711,6 @@ app.get("/api/notifications", protect, async (req, res) => {
 app.get("/api/notifications/missed", protect, async (req, res) => {
   try {
     const now = getISTDate();
-
-    // optional but recommended for IST
-    // now.setMinutes(now.getMinutes() + 330);
-
     const todayStart = startOfDay(now);
     const todayEnd = endOfDay(now);
 
@@ -723,11 +719,11 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
 
     const missed = [];
 
-    animals.forEach((animal) => {
+    for (const animal of animals) {
 
-      // =================
-      // 💉 VACCINE MISSED
-      // =================
+      /* =================
+         💉 VACCINE MISSED
+         ================= */
       if (
         animal.vaccineInfo?.nextVaccineDate &&
         animal.vaccineInfo.vaccineStatus === "pending"
@@ -737,28 +733,43 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
         const thirdDay = new Date(dueDate);
         thirdDay.setDate(thirdDay.getDate() + 3);
 
-        const thirdDayStart = startOfDay(thirdDay);
-        const thirdDayEnd = endOfDay(thirdDay);
+        if (todayStart >= startOfDay(thirdDay) && todayStart <= endOfDay(thirdDay)) {
 
-        if (todayStart >= thirdDayStart && todayStart <= thirdDayEnd) {
+          // ✅ CHECK IF ALREADY RECORDED
+          const alreadyMissed = animal.vaccineHistory.some(
+            (h) =>
+              h.status === "missed" &&
+              h.stage === animal.vaccineInfo.stage &&
+              h.date?.toDateString() === dueDate.toDateString()
+          );
+
+          if (!alreadyMissed) {
+            // ✅ SAVE TO HISTORY
+            animal.vaccineHistory.push({
+              vaccineType: animal.vaccineInfo.vaccineType,
+              stage: animal.vaccineInfo.stage,
+              status: "missed",
+              date: dueDate,
+            });
+
+            await animal.save();
+          }
+
           missed.push({
-            _id: `${animal._id}-vaccine-missed`,
             type: "vaccine",
-            dueDate,
-            missedDays: 3,
             animalId: animal._id,
             animalName: animal.name,
-            species: animal.species,
             ownerId: animal.ownerId?._id,
-            ownerName: animal.ownerId?.name || "Pet Owner",
-            ownerPhone: animal.ownerId?.phone || "",
+            ownerName: animal.ownerId?.name,
+            ownerPhone: animal.ownerId?.phone,
+            dueDate,
           });
         }
       }
 
-      // =================
-      // 🪱 DEWORMING MISSED
-      // =================
+      /* =================
+         🪱 DEWORMING MISSED
+         ================= */
       if (
         animal.dewormingInfo?.nextDewormingDate &&
         animal.dewormingInfo.dewormingStatus === "pending"
@@ -768,25 +779,36 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
         const thirdDay = new Date(dueDate);
         thirdDay.setDate(thirdDay.getDate() + 3);
 
-        const thirdDayStart = startOfDay(thirdDay);
-        const thirdDayEnd = endOfDay(thirdDay);
+        if (todayStart >= startOfDay(thirdDay) && todayStart <= endOfDay(thirdDay)) {
 
-        if (todayStart >= thirdDayStart && todayStart <= thirdDayEnd) {
+          const alreadyMissed = animal.dewormingHistory.some(
+            (h) =>
+              h.status === "missed" &&
+              h.date?.toDateString() === dueDate.toDateString()
+          );
+
+          if (!alreadyMissed) {
+            animal.dewormingHistory.push({
+              dewormingName: animal.dewormingInfo.dewormingName,
+              status: "missed",
+              date: dueDate,
+            });
+
+            await animal.save();
+          }
+
           missed.push({
-            _id: `${animal._id}-deworming-missed`,
             type: "deworming",
-            dueDate,
-            missedDays: 3,
             animalId: animal._id,
             animalName: animal.name,
-            species: animal.species,
             ownerId: animal.ownerId?._id,
-            ownerName: animal.ownerId?.name || "Pet Owner",
-            ownerPhone: animal.ownerId?.phone || "",
+            ownerName: animal.ownerId?.name,
+            ownerPhone: animal.ownerId?.phone,
+            dueDate,
           });
         }
       }
-    });
+    }
 
     res.json(missed);
   } catch (err) {
@@ -1096,6 +1118,53 @@ app.get("/api/dashboard/stats", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+// ---------------------
+// GET OWNER REPORT
+// ---------------------
+app.get("/api/owners/:ownerId/reports", protect, async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+
+    const animals = await Animal.find({
+      ownerId,
+      user: req.user.id,
+    });
+
+    let notificationsReceived = 0;
+    let notificationsMissed = 0;
+    let clinicVisits = 0;
+
+    animals.forEach((animal) => {
+      // 💉 Vaccine history
+      animal.vaccineHistory.forEach((v) => {
+        if (v.status === "completed") notificationsReceived++;
+        if (v.status === "missed") notificationsMissed++;
+      });
+
+      // 🪱 Deworming history
+      animal.dewormingHistory.forEach((d) => {
+        if (d.status === "completed") notificationsReceived++;
+        if (d.status === "missed") notificationsMissed++;
+      });
+
+      // 🏥 Visit logic = thank you sent
+      if (animal.vaccineInfo?.thankYouSent) clinicVisits++;
+      if (animal.dewormingInfo?.thankYouSent) clinicVisits++;
+    });
+
+    res.json({
+      notificationsReceived,
+      notificationsMissed,
+      clinicVisits,
+    });
+  } catch (err) {
+    console.error("REPORT ERROR:", err);
+    res.status(500).json({ message: "Failed to generate report" });
+  }
+});
+
 
  
 
