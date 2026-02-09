@@ -1105,8 +1105,11 @@ app.post(
         message: "Visit marked as completed",
       });
     } catch (err) {
-      console.error("SEND WHATSAPP ERROR:", err);
-      res.status(500).json({ message: "Server error" });
+      console.error("🔥 REAL ERROR:", err);
+      res.status(500).json({
+        message: err.message,
+        stack: err.stack,
+      });
     }
   }
 );
