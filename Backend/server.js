@@ -34,6 +34,8 @@ const getISTDate = (date = new Date()) => {
   return d;
 };
 
+const messageTemplates = require("./utils/messageTemplates");
+
 
 
 app.use(express.json());
@@ -939,7 +941,6 @@ app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
 
 
 // template reflects in whatsapp because of this code
-const messageTemplates = require("./utils/messageTemplates");
 
 app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
   try {
