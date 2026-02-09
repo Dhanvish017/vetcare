@@ -1033,7 +1033,7 @@ app.post(
       // 💉 VACCINE
       // -----------------
       if (type === "vaccine") {
-        if (!animal.vaccineInfo?.vaccineType) {
+        if (!animal.vaccineInfo) {
           return res.status(400).json({
             message: "Vaccine info not found",
           });
@@ -1065,7 +1065,7 @@ app.post(
       // 🪱 DEWORMING
       // -----------------
       if (type === "deworming") {
-        if (!animal.dewormingInfo?.dewormingName) {
+        if (!animal.dewormingInfo) {
           return res.status(400).json({
             message: "Deworming info not found",
           });
