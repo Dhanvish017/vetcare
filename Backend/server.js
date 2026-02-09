@@ -1004,6 +1004,13 @@ app.post(
     try {
       const { type } = req.body; // "vaccine" | "deworming"
 
+      // ✅ VALIDATION
+      if (!type || !["vaccine", "deworming"].includes(type)) {
+        return res.status(400).json({
+          message: "Type is required (vaccine | deworming)",
+        });
+      }
+
       const animal = await Animal.findOne({
         _id: req.params.animalId,
         user: req.user.id,
@@ -1015,17 +1022,31 @@ app.post(
 
       if (!animal.ownerId) {
         return res.status(400).json({
-          message: "Animal missing ownerId",
+          message: "Animal missing owner",
         });
       }
 
       const today = getISTDate();
+      let updated = false; // ✅ TRACK UPDATE
 
       // -----------------
       // 💉 VACCINE
       // -----------------
-      if (type === "vaccine" && animal.vaccineInfo?.vaccineType) {
-        // history
+      if (type === "vaccine") {
+        if (!animal.vaccineInfo?.vaccineType) {
+          return res.status(400).json({
+            message: "Vaccine info not found",
+          });
+        }
+
+        // Prevent double-complete
+        if (animal.vaccineInfo.vaccineStatus === "completed") {
+          return res.json({
+            success: true,
+            message: "Vaccine already completed",
+          });
+        }
+
         animal.vaccineHistory.push({
           vaccineType: animal.vaccineInfo.vaccineType,
           stage: animal.vaccineInfo.stage || "",
@@ -1033,16 +1054,31 @@ app.post(
           date: today,
         });
 
-        // mark completed
         animal.vaccineInfo.vaccineStatus = "completed";
         animal.vaccineInfo.lastVaccineDate = today;
         animal.vaccineInfo.thankYouSent = true;
+
+        updated = true;
       }
 
       // -----------------
       // 🪱 DEWORMING
       // -----------------
-      if (type === "deworming" && animal.dewormingInfo?.dewormingName) {
+      if (type === "deworming") {
+        if (!animal.dewormingInfo?.dewormingName) {
+          return res.status(400).json({
+            message: "Deworming info not found",
+          });
+        }
+
+        // Prevent double-complete
+        if (animal.dewormingInfo.dewormingStatus === "completed") {
+          return res.json({
+            success: true,
+            message: "Deworming already completed",
+          });
+        }
+
         animal.dewormingHistory.push({
           dewormingName: animal.dewormingInfo.dewormingName,
           date: today,
@@ -1051,16 +1087,22 @@ app.post(
         animal.dewormingInfo.dewormingStatus = "completed";
         animal.dewormingInfo.lastDewormingDate = today;
         animal.dewormingInfo.thankYouSent = true;
+
+        updated = true;
+      }
+
+      // ✅ SAFETY CHECK
+      if (!updated) {
+        return res.status(400).json({
+          message: "Nothing was updated",
+        });
       }
 
       await animal.save();
 
-      // 🔔 WhatsApp API will be plugged here later
-      // sendWhatsApp(animal.ownerId.phone, message)
-
       res.json({
         success: true,
-        message: "WhatsApp sent and visit marked as completed",
+        message: "Visit marked as completed",
       });
     } catch (err) {
       console.error("SEND WHATSAPP ERROR:", err);
@@ -1068,6 +1110,7 @@ app.post(
     }
   }
 );
+
 
 
 
