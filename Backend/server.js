@@ -1003,6 +1003,7 @@ app.post(
   async (req, res) => {
     try {
       const { type } = req.body; // "vaccine" | "deworming"
+      let updated = false;
 
       // ✅ VALIDATION
       if (!type || !["vaccine", "deworming"].includes(type)) {
@@ -1027,7 +1028,6 @@ app.post(
       }
 
       const today = getISTDate();
-      let updated = false; // ✅ TRACK UPDATE
 
       // -----------------
       // 💉 VACCINE
