@@ -592,25 +592,27 @@ app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async
   }
 });
 
+
+
 // ---------------------
-// NOTIFICATIONS: TODAY | YESTERDAY | 7TH DAY
+// NOTIFICATIONS: TODAY | TOMORROW (1-DAY BEFORE) | 7TH DAY
 // ---------------------
 app.get("/api/notifications", protect, async (req, res) => {
   try {
-    // Base dates
-    const today = getISTDate();
-    const todayStart = startOfDay(today);
-    const todayEnd = endOfDay(today);
+    // Normalize helper (remove time)
+    const normalize = (date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
 
-    const yesterday = getISTDate(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStart = startOfDay(yesterday);
-    const yesterdayEnd = endOfDay(yesterday);
+    const today = normalize(getISTDate());
 
-    const seventhDay = getISTDate(today);
-    seventhDay.setDate(seventhDay.getDate() + 7);
-    const seventhStart = startOfDay(seventhDay);
-    const seventhEnd = endOfDay(seventhDay);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const seventhDay = new Date(today);
+    seventhDay.setDate(today.getDate() + 7);
 
     // Fetch animals
     const animals = await Animal.find({ user: req.user.id })
@@ -618,7 +620,7 @@ app.get("/api/notifications", protect, async (req, res) => {
 
     const notifications = {
       today: [],
-      yesterday: [],
+      tomorrow: [],   // ✅ renamed
       seventhDay: [],
     };
 
@@ -631,7 +633,7 @@ app.get("/api/notifications", protect, async (req, res) => {
         animal.vaccineInfo?.nextVaccineDate &&
         animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        const dueDate = new Date(animal.vaccineInfo.nextVaccineDate);
+        const dueDate = normalize(animal.vaccineInfo.nextVaccineDate);
 
         const payload = {
           _id: `${animal._id}-vaccine`,
@@ -645,17 +647,16 @@ app.get("/api/notifications", protect, async (req, res) => {
           ownerPhone: animal.ownerId?.phone || "",
         };
 
-        if (dueDate >= todayStart && dueDate <= todayEnd) {
+        if (dueDate.getTime() === today.getTime()) {
           notifications.today.push(payload);
         }
 
-        if (dueDate >= yesterdayStart && dueDate <= yesterdayEnd) {
-          notifications.yesterday.push(payload);
+        // 🔔 1-day before reminder
+        if (dueDate.getTime() === tomorrow.getTime()) {
+          notifications.tomorrow.push(payload);
         }
 
-        if (
-          startOfDay(dueDate).getTime() === startOfDay(seventhDay).getTime()
-        ) {
+        if (dueDate.getTime() === seventhDay.getTime()) {
           notifications.seventhDay.push(payload);
         }
       }
@@ -667,7 +668,7 @@ app.get("/api/notifications", protect, async (req, res) => {
         animal.dewormingInfo?.nextDewormingDate &&
         animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        const dueDate = new Date(animal.dewormingInfo.nextDewormingDate);
+        const dueDate = normalize(animal.dewormingInfo.nextDewormingDate);
 
         const payload = {
           _id: `${animal._id}-deworming`,
@@ -681,17 +682,16 @@ app.get("/api/notifications", protect, async (req, res) => {
           ownerPhone: animal.ownerId?.phone || "",
         };
 
-        if (dueDate >= todayStart && dueDate <= todayEnd) {
+        if (dueDate.getTime() === today.getTime()) {
           notifications.today.push(payload);
         }
 
-        if (dueDate >= yesterdayStart && dueDate <= yesterdayEnd) {
-          notifications.yesterday.push(payload);
+        // 🔔 1-day before reminder
+        if (dueDate.getTime() === tomorrow.getTime()) {
+          notifications.tomorrow.push(payload);
         }
 
-        if (
-          startOfDay(dueDate).getTime() === startOfDay(seventhDay).getTime()
-        ) {
+        if (dueDate.getTime() === seventhDay.getTime()) {
           notifications.seventhDay.push(payload);
         }
       }
@@ -703,6 +703,8 @@ app.get("/api/notifications", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 });
+
+
 
 
 
