@@ -825,37 +825,37 @@ app.get("/api/notifications/missed", protect, async (req, res) => {
 
 
 // ---------------------
-// THANK YOU LIST (TODAY)
+// THANK YOU: Due Today (Pending)
 // ---------------------
 app.get("/api/notifications/thank-you", protect, async (req, res) => {
   try {
-    const now = getISTDate();
+    const normalize = (date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
 
-    // optional: IST-safe (recommended)
-    // now.setMinutes(now.getMinutes() + 330);
-
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
+    const today = normalize(new Date());
 
     const animals = await Animal.find({ user: req.user.id })
       .populate("ownerId", "name phone");
 
-    const thankYou = [];
+    const thanksList = [];
 
     animals.forEach((animal) => {
 
-      // 💉 VACCINE
+      // 💉 Vaccine due today
       if (
-        animal.vaccineInfo?.vaccineStatus === "completed" &&
-        animal.vaccineInfo.lastVaccineDate &&
-        !animal.vaccineInfo.thankYouSent
+        animal.vaccineInfo?.nextVaccineDate &&
+        animal.vaccineInfo.vaccineStatus === "pending"
       ) {
-        const completedDate = new Date(animal.vaccineInfo.lastVaccineDate);
+        const dueDate = normalize(animal.vaccineInfo.nextVaccineDate);
 
-        if (completedDate >= todayStart && completedDate <= todayEnd) {
-          thankYou.push({
-            _id: `${animal._id}-vaccine-thanks`,
+        if (dueDate.getTime() === today.getTime()) {
+          thanksList.push({
+            _id: `${animal._id}-vaccine`,
             type: "vaccine",
+            dueDate,
             animalId: animal._id,
             animalName: animal.name,
             ownerName: animal.ownerId?.name || "Pet Owner",
@@ -864,18 +864,18 @@ app.get("/api/notifications/thank-you", protect, async (req, res) => {
         }
       }
 
-      // 🪱 DEWORMING
+      // 🪱 Deworming due today
       if (
-        animal.dewormingInfo?.dewormingStatus === "completed" &&
-        animal.dewormingInfo.lastDewormingDate &&
-        !animal.dewormingInfo.thankYouSent
+        animal.dewormingInfo?.nextDewormingDate &&
+        animal.dewormingInfo.dewormingStatus === "pending"
       ) {
-        const completedDate = new Date(animal.dewormingInfo.lastDewormingDate);
+        const dueDate = normalize(animal.dewormingInfo.nextDewormingDate);
 
-        if (completedDate >= todayStart && completedDate <= todayEnd) {
-          thankYou.push({
-            _id: `${animal._id}-deworming-thanks`,
+        if (dueDate.getTime() === today.getTime()) {
+          thanksList.push({
+            _id: `${animal._id}-deworming`,
             type: "deworming",
+            dueDate,
             animalId: animal._id,
             animalName: animal.name,
             ownerName: animal.ownerId?.name || "Pet Owner",
@@ -885,12 +885,14 @@ app.get("/api/notifications/thank-you", protect, async (req, res) => {
       }
     });
 
-    res.json(thankYou);
+    res.json(thanksList);
+
   } catch (err) {
     console.error("THANK YOU ERROR:", err);
     res.status(500).json({ message: "Failed to fetch thank you list" });
   }
 });
+
 
 
 
@@ -1058,7 +1060,6 @@ app.post(
 
         animal.vaccineInfo.vaccineStatus = "completed";
         animal.vaccineInfo.lastVaccineDate = today;
-        animal.vaccineInfo.thankYouSent = true;
 
         updated = true;
       }
@@ -1088,7 +1089,7 @@ app.post(
 
         animal.dewormingInfo.dewormingStatus = "completed";
         animal.dewormingInfo.lastDewormingDate = today;
-        animal.dewormingInfo.thankYouSent = true;
+        
 
         updated = true;
       }
@@ -1112,6 +1113,44 @@ app.post(
         message: err.message,
         stack: err.stack,
       });
+    }
+  }
+);
+
+
+// ---------------------
+// SEND THANK YOU
+// ---------------------
+app.post(
+  "/api/notifications/send-thank-you/:animalId",
+  protect,
+  async (req, res) => {
+    try {
+      const { type } = req.body;
+
+      const animal = await Animal.findOne({
+        _id: req.params.animalId,
+        user: req.user.id,
+      });
+
+      if (!animal) {
+        return res.status(404).json({ message: "Animal not found" });
+      }
+
+      if (type === "vaccine" && animal.vaccineInfo) {
+        animal.vaccineInfo.thankYouSent = true;
+      }
+
+      if (type === "deworming" && animal.dewormingInfo) {
+        animal.dewormingInfo.thankYouSent = true;
+      }
+
+      await animal.save();
+
+      res.json({ success: true, message: "Thank you marked as sent" });
+    } catch (err) {
+      console.error("THANK YOU ERROR:", err);
+      res.status(500).json({ message: "Server error" });
     }
   }
 );
