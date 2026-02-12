@@ -944,8 +944,6 @@ app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
 });
 
 
-// template reflects in whatsapp because of this code
-
 app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
   try {
     const { reminder } = req.body;
@@ -956,7 +954,7 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ FALLBACK TEMPLATE //default template
+    // ✅ Select template (fallback safe)
     const template =
       messageTemplates[user.whatsappTemplate] ||
       messageTemplates.FRIENDLY_V1;
@@ -965,35 +963,52 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
       return res.status(400).json({ message: "Template not selected" });
     }
 
-    // ✅ Decide dynamically based on account type
-    const isClinic = user.accountType === "clinic";
+    // ===========================
+    // 🔥 Decide Sender Name
+    // ===========================
+    const senderName =
+      user.accountType === "doctor"
+        ? `Dr. ${user.name || ""}`
+        : user.clinicName || "";
 
-    const finalContact = user.phone; // ✅ ALWAYS USER PHONE
+    // ===========================
+    // 🔥 Decide Activity Type
+    // ===========================
+    const activityType =
+      reminder.type === "deworming"
+        ? "Deworming"
+        : "Vaccination";
 
-    const finalClinicName = isClinic
-      ? user.clinicName
-      : ""; // hide clinic name for doctor accounts
+    // ===========================
+    // 🔥 Decide Pet Emoji
+    // ===========================
+    const petEmoji =
+      reminder.species === "dog"
+        ? "🐶"
+        : reminder.species === "cat"
+        ? "🐱"
+        : "🐾";
 
-    const finalDoctorName = isClinic
-      ? "" // hide doctor name for clinic accounts
-      : user.name || "Doctor";
-
-    // ✅ Build message safely
+    // ===========================
+    // ✅ Build Message Properly
+    // ===========================
     let message = template.body
       .replace(/{{ownerName}}/g, reminder.ownerName || "Pet Owner")
       .replace(/{{petName}}/g, reminder.petName || "your pet")
-      .replace(/{{vaccine}}/g, reminder.type || "vaccination")
+      .replace(/{{petEmoji}}/g, petEmoji)
+      .replace(/{{activityType}}/g, activityType)
       .replace(/{{dueDate}}/g, reminder.dueDate || "")
-      .replace(/{{contact}}/g, finalContact)
-      .replace(/{{clinicName}}/g, finalClinicName)
-      .replace(/{{doctorName}}/g, finalDoctorName);
+      .replace(/{{contact}}/g, user.phone || "")
+      .replace(/{{senderName}}/g, senderName);
 
     res.json({ message });
+
   } catch (err) {
     console.error("BUILD WHATSAPP MESSAGE ERROR:", err);
     res.status(500).json({ message: "Failed to build message" });
   }
 });
+
 
 
 
