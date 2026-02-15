@@ -978,9 +978,11 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
     // 🔥 Decide Activity Type
     // ===========================
     const activityType =
-      reminder.type === "deworming"
-        ? "Deworming"
-        : "Vaccination";
+  String(reminder.type || "")
+    .trim()
+    .toLowerCase() === "deworming"
+    ? "Deworming"
+    : "Vaccination";
 
     // ===========================
     // 🔥 Decide Pet Emoji
