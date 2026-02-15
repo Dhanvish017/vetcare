@@ -14,6 +14,9 @@ const { protect } = require("./middleware/auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const ReminderLog = require("./models/ReminderLog");
+
+
 const IST_OFFSET_MINUTES = 330;
 
 const startOfDay = (date) => {
