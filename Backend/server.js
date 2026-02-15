@@ -383,28 +383,28 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
 
       if (
         !req.body.vaccineInfo.stage ||
-        !["1st", "2nd", "3rd", "4th","Annual", "Custom"].includes(req.body.vaccineInfo.stage)
+        !["1st", "2nd", "3rd", "4th", "Annual", "Custom"].includes(req.body.vaccineInfo.stage)
       ) {
         return res.status(400).json({
           message: "Invalid or missing vaccine stage",
         });
       }
-      
+
 
       animal.vaccineInfo = {
         presentVaccineType: req.body.vaccineInfo.presentVaccineType || "",
         vaccineType: req.body.vaccineInfo.vaccineType,
         stage: req.body.vaccineInfo.stage,
         customStage: req.body.vaccineInfo.customStage || "",
-      
+
         nextVaccineDate: req.body.vaccineInfo.nextVaccineDate || null,
         lastVaccineDate: null,
-      
+
         vaccineStatus: "pending",
         thankYouSent: false,
       };
-      
-      
+
+
     }
 
     /* =====================
@@ -421,17 +421,17 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
       animal.dewormingInfo = {
         presentDewormingName: req.body.dewormingInfo.presentDewormingName || "",
         dewormingName: req.body.dewormingInfo.dewormingName || "",
-      
+
         nextDewormingDate: req.body.dewormingInfo.nextDewormingDate || null,
         lastDewormingDate: null,
-      
+
         dewormingStatus: "pending",
         thankYouSent: false,
       };
-      
+
     }
 
-    
+
 
     await animal.save();
     res.json(animal);
@@ -482,7 +482,7 @@ app.get("/api/owners/:id", protect, async (req, res) => {
     console.error("REAL FETCH OWNER ERROR:", err);
     res.status(500).json({ message: err.message });
   }
-  
+
 });
 
 
@@ -505,10 +505,10 @@ app.get("/api/animals", protect, async (req, res) => {
 // ---------------------
 // GET ANIMAL BY ID
 // ---------------------
-app.get("/api/animals/:id",protect, async (req, res) => {
-  const animal = await Animal.findOne({ 
+app.get("/api/animals/:id", protect, async (req, res) => {
+  const animal = await Animal.findOne({
     _id: req.params.id,
-    user: req.user.id 
+    user: req.user.id
   });
   if (!animal) return res.status(404).json({ message: "Not found" });
   res.json(animal);
@@ -555,11 +555,11 @@ app.get("/api/animals/:id",protect, async (req, res) => {
 // ---------------------
 // DELETE ANIMAL
 // ---------------------
-app.delete("/api/animals/:id",protect, async (req, res) => {
+app.delete("/api/animals/:id", protect, async (req, res) => {
   try {
-    const deleted = await Animal.findOneAndDelete({ 
+    const deleted = await Animal.findOneAndDelete({
       _id: req.params.id,
-      user: req.user.id 
+      user: req.user.id
     });
 
     if (!deleted) {
@@ -573,13 +573,13 @@ app.delete("/api/animals/:id",protect, async (req, res) => {
 });
 
 // DELETE SINGLE VACCINE HISTORY ENTRY
-app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect,async (req, res) => {
+app.delete("/api/animals/:animalId/vaccine-history/:historyIndex", protect, async (req, res) => {
   try {
     const { animalId, historyIndex } = req.params;
 
-    const animal = await Animal.findOne({ 
+    const animal = await Animal.findOne({
       _id: animalId,
-      user: req.user.id 
+      user: req.user.id
     });
     if (!animal) return res.status(404).json({ message: "Animal not found" });
 
@@ -937,7 +937,7 @@ app.get("/api/notify/templates", protect, (req, res) => {
 
 
 //read selected template
-app.get("/api/notify/whatsapp-template", protect , async (req, res) => {
+app.get("/api/notify/whatsapp-template", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("whatsappTemplate");
     res.json({ templateId: user.whatsappTemplate });
@@ -989,8 +989,8 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
       reminder.species === "dog"
         ? "🐶"
         : reminder.species === "cat"
-        ? "🐱"
-        : "🐾";
+          ? "🐱"
+          : "🐾";
 
     // ===========================
     // ✅ Build Message Properly
@@ -1107,7 +1107,7 @@ app.post(
 
         animal.dewormingInfo.dewormingStatus = "completed";
         animal.dewormingInfo.lastDewormingDate = today;
-        
+
 
         updated = true;
       }
@@ -1119,7 +1119,25 @@ app.post(
         });
       }
 
+
       await animal.save();
+
+      // ===============================
+      // 🔥 STORE IN REMINDER LOG
+      // ===============================
+      await ReminderLog.create({
+        user: req.user.id,
+        animalId: animal._id,
+        ownerId: animal.ownerId?._id,
+        type: type, // vaccine or deworming
+        reminderWindow: "today", // you can improve later
+        sentAt: new Date(),
+        received: false,
+        visited: true, // since this route marks visit completed
+      });
+
+
+
 
       res.json({
         success: true,
@@ -1134,6 +1152,8 @@ app.post(
     }
   }
 );
+
+
 
 
 // ---------------------
@@ -1165,15 +1185,24 @@ app.post(
 
       await animal.save();
 
-      res.json({ success: true, message: "Thank you marked as sent" });
+      await ReminderLog.create({
+        user: req.user.id,
+        animalId: animal._id,
+        ownerId: animal.ownerId?._id,
+        type: type, // vaccine or deworming 
+        reminderWindow: "thankyou",
+        sentAt: new Date(),
+        received: false,
+        visited: true, // since this route marks visit completed
+        thankyouSent: true,
+        followupSent: false,
+      });
     } catch (err) {
       console.error("THANK YOU ERROR:", err);
-      res.status(500).json({ message: "Server error" });
+      res.status(500).json({ message: "Failed to send thank you" });
     }
   }
 );
-
-
 
 
 
@@ -1274,7 +1303,7 @@ app.get("/api/owners/:ownerId/reports", protect, async (req, res) => {
 
 
 
- 
+
 
 // ---------------------
 app.listen(process.env.PORT || 5001, () =>
