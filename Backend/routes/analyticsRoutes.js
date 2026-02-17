@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const Animal = require("../models/Animal");
+const Animal = require("../models/Pet");
 const ReminderLog = require("../models/ReminderLog");
-const { protect } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/auth");
 
 router.get("/today", protect, async (req, res) => {
   try {
@@ -11,11 +11,16 @@ router.get("/today", protect, async (req, res) => {
     // -------------------------
     // 🕒 TODAY RANGE
     // -------------------------
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const now = new Date();
 
-    const endOfDay = new Date();
+    const startOfDay = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(startOfDay);
     endOfDay.setHours(23, 59, 59, 999);
+    
 
     // =========================
     // 1️⃣ VACCINES DUE TODAY

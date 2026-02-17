@@ -17,6 +17,7 @@ const jwt = require("jsonwebtoken");
 const ReminderLog = require("./models/ReminderLog");
 
 
+
 const IST_OFFSET_MINUTES = 330;
 
 const startOfDay = (date) => {
@@ -53,6 +54,9 @@ app.use(express.urlencoded({ extended: true }));
 
 const notifyRoutes = require("./routes/notify");
 app.use("/api/notify", notifyRoutes);
+
+const analyticRoutes = require("./routes/analyticsRoutes");
+app.use("/api/analytics", analyticRoutes);
 
 
 const cron = require("node-cron");
@@ -1013,6 +1017,7 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to build message" });
   }
 });
+
 
 
 
