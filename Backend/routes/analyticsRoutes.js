@@ -110,23 +110,28 @@ router.get("/today", protect, async (req, res) => {
     // ✅ RESPONSE
     // =========================
     res.json({
-      dueToday: {
-        vaccine: vaccineDueToday,
-        deworming: dewormingDueToday,
-        total: totalDueToday,
-      },
-      sentToday: {
-        vaccine: vaccineSentToday,
-        deworming: dewormingSentToday,
-        total: totalSentToday,
-      },
-      completedToday: {
-        vaccine: vaccineCompletedToday,
-        deworming: dewormingCompletedToday,
-        total: totalCompletedToday,
-      },
+      vaccineCount: vaccineSentToday,
+      dewormingCount: dewormingSentToday,
+      totalSent: totalSentToday,
+    
+      thankyouCount: await ReminderLog.countDocuments({
+        user: userId,
+        reminderWindow: "thankyou",
+        sentAt: { $gte: startOfDay, $lte: endOfDay },
+      }),
+    
+      missedCount: await ReminderLog.countDocuments({
+        user: userId,
+        reminderWindow: "missed",
+        sentAt: { $gte: startOfDay, $lte: endOfDay },
+      }),
+    
+      vaccineCompleted: vaccineCompletedToday,
+      dewormingCompleted: dewormingCompletedToday,
+    
       conversionRate,
     });
+    
   } catch (error) {
     console.error("ANALYTICS ERROR:", error);
     res.status(500).json({ message: "Failed to fetch analytics" });

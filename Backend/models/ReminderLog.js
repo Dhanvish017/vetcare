@@ -29,8 +29,9 @@ const reminderLogSchema = new mongoose.Schema(
 
     reminderWindow: {
       type: String,
-      enum: ["sevenDay", "oneDay", "today"],
+      enum: ["sevenDay", "oneDay", "today", "missed", "thankyou"],
     },
+    
 
     sent: {
       type: Boolean,
