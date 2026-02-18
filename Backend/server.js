@@ -1024,17 +1024,15 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
 
 
 // ---------------------
-// SEND WHATSAPP + COMPLETE VISIT
+// SEND WHATSAPP REMINDER
 // ---------------------
 app.post(
   "/api/notifications/send-whatsapp/:animalId",
   protect,
   async (req, res) => {
     try {
-      const { type } = req.body; // "vaccine" | "deworming"
-      let updated = false;
+      const { type } = req.body;
 
-      // ✅ VALIDATION
       if (!type || !["vaccine", "deworming"].includes(type)) {
         return res.status(400).json({
           message: "Type is required (vaccine | deworming)",
@@ -1056,106 +1054,30 @@ app.post(
         });
       }
 
-      const today = getISTDate();
+      // 🚫 DO NOT mark completed here
+      // 🚫 DO NOT update history here
+      // 🚫 DO NOT change vaccineStatus or dewormingStatus
 
-      // -----------------
-      // 💉 VACCINE
-      // -----------------
-      if (type === "vaccine") {
-        if (!animal.vaccineInfo) {
-          return res.status(400).json({
-            message: "Vaccine info not found",
-          });
-        }
-
-        // Prevent double-complete
-        if (animal.vaccineInfo.vaccineStatus === "completed") {
-          return res.json({
-            success: true,
-            message: "Vaccine already completed",
-          });
-        }
-
-        animal.vaccineHistory.push({
-          vaccineType: animal.vaccineInfo.vaccineType,
-          stage: animal.vaccineInfo.stage || "",
-          status: "completed",
-          date: today,
-        });
-
-        animal.vaccineInfo.vaccineStatus = "completed";
-        animal.vaccineInfo.lastVaccineDate = today;
-
-        updated = true;
-      }
-
-      // -----------------
-      // 🪱 DEWORMING
-      // -----------------
-      if (type === "deworming") {
-        if (!animal.dewormingInfo) {
-          return res.status(400).json({
-            message: "Deworming info not found",
-          });
-        }
-
-        // Prevent double-complete
-        if (animal.dewormingInfo.dewormingStatus === "completed") {
-          return res.json({
-            success: true,
-            message: "Deworming already completed",
-          });
-        }
-
-        animal.dewormingHistory.push({
-          dewormingName: animal.dewormingInfo.dewormingName,
-          date: today,
-        });
-
-        animal.dewormingInfo.dewormingStatus = "completed";
-        animal.dewormingInfo.lastDewormingDate = today;
-
-
-        updated = true;
-      }
-
-      // ✅ SAFETY CHECK
-      if (!updated) {
-        return res.status(400).json({
-          message: "Nothing was updated",
-        });
-      }
-
-
-      await animal.save();
-
-      // ===============================
-      // 🔥 STORE IN REMINDER LOG
-      // ===============================
+      // Just log reminder
       await ReminderLog.create({
         user: req.user.id,
         animalId: animal._id,
-        ownerId: animal.ownerId?._id,
-        type: type, // vaccine or deworming
-        reminderWindow: "today", // you can improve later
+        ownerId: animal.ownerId._id,
+        type,
+        reminderWindow: "today",
         sentAt: new Date(),
-        received: false,
-        visited: true, // since this route marks visit completed
+        visited: false,
+        thankyouSent: false,
       });
-
-
-
 
       res.json({
         success: true,
-        message: "Visit marked as completed",
+        message: "Reminder sent successfully",
       });
+
     } catch (err) {
-      console.error("🔥 REAL ERROR:", err);
-      res.status(500).json({
-        message: err.message,
-        stack: err.stack,
-      });
+      console.error("SEND WHATSAPP ERROR:", err);
+      res.status(500).json({ message: "Failed to send reminder" });
     }
   }
 );
@@ -1163,8 +1085,10 @@ app.post(
 
 
 
+
+
 // ---------------------
-// SEND THANK YOU
+// SEND THANK YOU + COMPLETE VISIT
 // ---------------------
 app.post(
   "/api/notifications/send-thank-you/:animalId",
@@ -1182,11 +1106,35 @@ app.post(
         return res.status(404).json({ message: "Animal not found" });
       }
 
+      const today = getISTDate();
+
       if (type === "vaccine" && animal.vaccineInfo) {
+        if (animal.vaccineInfo.vaccineStatus !== "completed") {
+          animal.vaccineHistory.push({
+            vaccineType: animal.vaccineInfo.vaccineType,
+            stage: animal.vaccineInfo.stage || "",
+            status: "completed",
+            date: today,
+          });
+
+          animal.vaccineInfo.vaccineStatus = "completed";
+          animal.vaccineInfo.lastVaccineDate = today;
+        }
+
         animal.vaccineInfo.thankYouSent = true;
       }
 
       if (type === "deworming" && animal.dewormingInfo) {
+        if (animal.dewormingInfo.dewormingStatus !== "completed") {
+          animal.dewormingHistory.push({
+            dewormingName: animal.dewormingInfo.dewormingName,
+            date: today,
+          });
+
+          animal.dewormingInfo.dewormingStatus = "completed";
+          animal.dewormingInfo.lastDewormingDate = today;
+        }
+
         animal.dewormingInfo.thankYouSent = true;
       }
 
@@ -1195,21 +1143,19 @@ app.post(
       await ReminderLog.create({
         user: req.user.id,
         animalId: animal._id,
-        ownerId: animal.ownerId?._id,
-        type: type, // vaccine or deworming 
+        ownerId: animal.ownerId,
+        type,
         reminderWindow: "thankyou",
         sentAt: new Date(),
-        received: false,
-        visited: true, // since this route marks visit completed
+        visited: true,
         thankyouSent: true,
-        followupSent: false,
       });
 
       res.status(200).json({
         success: true,
-        message: "Thank you sent successfully",
+        message: "Thank you sent & visit marked completed",
       });
-      
+
     } catch (err) {
       console.error("THANK YOU ERROR:", err);
       res.status(500).json({ message: "Failed to send thank you" });
