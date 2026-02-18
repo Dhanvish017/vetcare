@@ -380,10 +380,14 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
         animal.vaccineHistory.push({
           vaccineType: animal.vaccineInfo.vaccineType,
           stage: animal.vaccineInfo.stage,
-          status: animal.vaccineInfo.vaccineStatus,
-          date: animal.vaccineInfo.nextVaccineDate,
+          status:
+            animal.vaccineInfo.vaccineStatus === "completed"
+              ? "completed"
+              : "missed",   // treat old pending as missed
+          date: animal.vaccineInfo.lastVaccineDate || animal.vaccineInfo.nextVaccineDate,
         });
       }
+      
 
       if (
         !req.body.vaccineInfo.stage ||
@@ -418,9 +422,16 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
       if (animal.dewormingInfo?.dewormingName) {
         animal.dewormingHistory.push({
           dewormingName: animal.dewormingInfo.dewormingName,
-          date: animal.dewormingInfo.nextDewormingDate,
+          status:
+            animal.dewormingInfo.dewormingStatus === "completed"
+              ? "completed"
+              : "missed",
+          date:
+            animal.dewormingInfo.lastDewormingDate ||
+            animal.dewormingInfo.nextDewormingDate,
         });
       }
+      
 
       animal.dewormingInfo = {
         presentDewormingName: req.body.dewormingInfo.presentDewormingName || "",
