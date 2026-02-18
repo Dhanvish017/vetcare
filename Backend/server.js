@@ -1204,6 +1204,12 @@ app.post(
         thankyouSent: true,
         followupSent: false,
       });
+
+      res.status(200).json({
+        success: true,
+        message: "Thank you sent successfully",
+      });
+      
     } catch (err) {
       console.error("THANK YOU ERROR:", err);
       res.status(500).json({ message: "Failed to send thank you" });
