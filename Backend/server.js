@@ -1125,9 +1125,13 @@ app.post(
       });
 
     } catch (err) {
-      console.error("FOLLOWUP ERROR:", err);
-      res.status(500).json({ message: err.message });
+      console.error("FOLLOWUP ERROR FULL:", err);
+      res.status(500).json({
+        message: err.message,
+        stack: err.stack,
+      });
     }
+    
   }
 );
 
