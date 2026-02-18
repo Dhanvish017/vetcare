@@ -1084,6 +1084,68 @@ app.post(
 
 
 
+// ---------------------
+// SEND FOLLOW-UP (MISSED)
+// ---------------------
+app.post(
+  "/api/notifications/send-followup/:animalId",
+  protect,
+  async (req, res) => {
+    try {
+      const { type } = req.body;
+
+      if (!type || !["vaccine", "deworming"].includes(type)) {
+        return res.status(400).json({
+          message: "Type is required (vaccine | deworming)",
+        });
+      }
+
+      const animal = await Animal.findOne({
+        _id: req.params.animalId,
+        user: req.user.id,
+      }).populate("ownerId", "name phone");
+
+      if (!animal) {
+        return res.status(404).json({ message: "Animal not found" });
+      }
+
+      if (!animal.ownerId) {
+        return res.status(400).json({
+          message: "Owner missing",
+        });
+      }
+
+      // ❌ DO NOT mark completed
+      // ❌ DO NOT change thankYouSent
+      // ❌ DO NOT update history
+
+      await ReminderLog.create({
+        user: req.user.id,
+        animalId: animal._id,
+        ownerId: animal.ownerId._id,
+        type,
+        reminderWindow: "followup", // 🔥 Important
+        sentAt: new Date(),
+        visited: false,
+        thankyouSent: false,
+        followupSent: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Follow-up reminder sent successfully",
+      });
+
+    } catch (err) {
+      console.error("FOLLOWUP ERROR:", err);
+      res.status(500).json({ message: "Failed to send follow-up" });
+    }
+  }
+);
+
+
+
+
 
 
 
