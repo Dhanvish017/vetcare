@@ -1122,9 +1122,9 @@ app.post(
       await ReminderLog.create({
         user: req.user.id,
         animalId: animal._id,
-        ownerId: animal.ownerId._id, // now safe
+        ownerId: animal.ownerId,
         type,
-        reminderWindow: "followup",
+        reminderWindow: "missed",
         sentAt: new Date(),
         visited: false,
         thankyouSent: false,
