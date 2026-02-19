@@ -308,6 +308,7 @@ app.post("/api/animals", protect, async (req, res) => {
     // 1️⃣ Create animal with ownerId
     const animal = await Animal.create({
       ...animalData,
+      species: animalData.species?.toLowerCase(),
       ownerId,
       user: req.user.id,
     });
