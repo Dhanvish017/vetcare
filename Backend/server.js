@@ -965,7 +965,7 @@ app.get("/api/notify/whatsapp-template", protect, async (req, res) => {
 
 app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
   try {
-    const { reminder } = req.body;
+    const { reminder, messageType } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -974,9 +974,19 @@ app.post("/api/notify/build-whatsapp-message", protect, async (req, res) => {
     }
 
     // ✅ Select template (fallback safe)
-    const template =
-      messageTemplates[user.whatsappTemplate] ||
-      messageTemplates.FRIENDLY_V1;
+    let template;
+
+// 🔥 Force template for specific message types
+if (messageType === "thankyou") {
+  template = messageTemplates.THANK_YOU_SIMPLE;
+} else if (messageType === "missed") {
+  template = messageTemplates.MISSED_FOLLOWUP;
+} else {
+  // Normal reminder — use user's selected template
+  template =
+    messageTemplates[user.whatsappTemplate] ||
+    messageTemplates.FRIENDLY_V1;
+}
 
     if (!template) {
       return res.status(400).json({ message: "Template not selected" });
