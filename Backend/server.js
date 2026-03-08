@@ -65,7 +65,7 @@ const cron = require("node-cron");
 // DATABASE CONNECTION
 // ---------------------
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/vetcare")
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log("MongoDB Error:", err));
 
@@ -446,9 +446,6 @@ app.put("/api/animals/:animalId/activities", protect, async (req, res) => {
       };
 
     }
-
-
-
     await animal.save();
     res.json(animal);
 
