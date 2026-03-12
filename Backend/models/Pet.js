@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const animalSchema = new mongoose.Schema(
   {
-    //USER (MULTI-TENANCY)
+    // USER (MULTI-TENANCY)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -33,7 +33,7 @@ const animalSchema = new mongoose.Schema(
     },
 
     age: {
-      type: Number, // derived from DOB (years)
+      type: Number,
     },
 
     gender: {
@@ -43,13 +43,6 @@ const animalSchema = new mongoose.Schema(
     },
 
     // 👤 OWNER INFO
-    /*owner: {
-      name: { type: String, trim: true },
-      email: { type: String, trim: true },
-      phone: { type: String, trim: true },
-      address: { type: String, trim: true },
-    },*/
-
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Owner",
@@ -58,102 +51,55 @@ const animalSchema = new mongoose.Schema(
     },
 
     /* =========================
-       💉 VACCINE ACTIVITY
+       💉 VACCINE ACTIVITY (V1)
        ========================= */
     vaccineInfo: {
-      presentVaccineType: {
-        type: String, // previously given vaccine
-        trim: true,
-      },
-
-      vaccineType: {
-        type: String, // DHHPPi+RL, Tricat, Rabies, etc.
-        trim: true,
-      },
-
+      presentVaccineType: { type: String, trim: true },
+      vaccineType:        { type: String, trim: true },
       stage: {
         type: String,
-        enum: ["1st", "2nd", "3rd", "4th","Annual", "Custom"],
+        enum: ["1st", "2nd", "3rd", "4th", "Annual", "Custom"],
       },
-      
-      customStage: {
-        type: String,
-        trim: true,
-      },
-      
+      customStage:     { type: String, trim: true },
       vaccineStatus: {
         type: String,
         enum: ["pending", "completed"],
         default: "pending",
       },
-
-
-      nextVaccineDate: {
-        type: Date,
-      },
-
-      lastVaccineDate: {
-        type: Date,
-      },
-
-      thankYouSent: {
-        type: Boolean,
-        default: false,
-      },
+      nextVaccineDate: { type: Date },
+      lastVaccineDate: { type: Date },
+      thankYouSent:    { type: Boolean, default: false },
     },
 
     /* =========================
-       🪱 DEWORMING ACTIVITY
+       🪱 DEWORMING ACTIVITY (V1)
        ========================= */
     dewormingInfo: {
-      presentDewormingName: {
-        type: String,
-        trim: true,
-      },
-
-      dewormingName: {
-        type: String, // Pyrantel pamate, Fenbendazole, custom
-        trim: true,
-      },
-
+      presentDewormingName: { type: String, trim: true },
+      dewormingName:        { type: String, trim: true },
       dewormingStatus: {
         type: String,
         enum: ["pending", "completed"],
         default: "pending",
       },
-
-      nextDewormingDate: {
-        type: Date,
-      },
-
-      // ✅ ADD THIS
-  lastDewormingDate: {
-    type: Date,
-  },
-
-  // ✅ ADD THIS
-  thankYouSent: {
-    type: Boolean,
-    default: false,
-  },
+      nextDewormingDate: { type: Date },
+      lastDewormingDate: { type: Date },
+      thankYouSent:      { type: Boolean, default: false },
     },
-    /* =========================
-       📜 ACTIVITY HISTORY
-       ========================= */
 
+    /* =========================
+       📜 ACTIVITY HISTORY (V1)
+       ========================= */
     vaccineHistory: [
       {
         vaccineType: String,
-        stage: String,
+        stage:       String,
         status: {
           type: String,
           enum: ["completed", "missed"],
         },
-        date: Date,
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
+        date:      Date,
+        createdAt: { type: Date, default: Date.now },
       },
     ],
 
@@ -164,11 +110,45 @@ const animalSchema = new mongoose.Schema(
           type: String,
           enum: ["completed", "missed"],
         },
-        date: Date,
-        createdAt: {
-          type: Date,
-          default: Date.now,
+        date:      Date,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    /* =========================
+       📅 VACCINE SCHEDULE (V2)
+       ========================= */
+    vaccineSchedule: [
+      {
+        stage:       { type: String, trim: true },
+        vaccineName: { type: String, trim: true },
+        interval:    { type: Number, default: 0 },
+        dueDate:     { type: Date },
+        status: {
+          type: String,
+          enum: ["pending", "completed", "missed"],
+          default: "pending",
         },
+        notes:     { type: String, trim: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    /* =========================
+       📅 DEWORMING SCHEDULE (V2)
+       ========================= */
+    dewormingSchedule: [
+      {
+        dewormingName: { type: String, trim: true },
+        interval:      { type: Number, default: 0 },
+        dueDate:       { type: Date },
+        status: {
+          type: String,
+          enum: ["pending", "completed", "missed"],
+          default: "pending",
+        },
+        notes:     { type: String, trim: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
   },
@@ -176,6 +156,3 @@ const animalSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Animal", animalSchema);
-
-
-
