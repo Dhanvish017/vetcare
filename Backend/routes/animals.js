@@ -63,6 +63,51 @@ router.get("/:id", protect, async (req, res) => {
 });
 
 // ---------------------
+// SAVE / UPDATE SCHEDULE (V2)
+// ---------------------
+router.put("/:animalId/schedule", protect, async (req, res) => {
+  try {
+    const animal = await Animal.findOne({
+      _id: req.params.animalId,
+      user: req.user.id,
+    });
+
+    if (!animal) return res.status(404).json({ message: "Animal not found" });
+
+    const { vaccineSchedule, dewormingSchedule } = req.body;
+
+    // Replace the entire schedule arrays
+    if (vaccineSchedule) {
+      animal.vaccineSchedule = vaccineSchedule.map((row) => ({
+        stage:       row.stage || "",
+        vaccineName: row.vaccineName || "",
+        interval:    row.interval || 0,
+        dueDate:     row.dueDate ? new Date(row.dueDate) : null,
+        status:      row.status || "pending",
+        notes:       row.notes || "",
+      }));
+    }
+
+    if (dewormingSchedule) {
+      animal.dewormingSchedule = dewormingSchedule.map((row) => ({
+        dewormingName: row.dewormingName || "",
+        interval:      row.interval || 0,
+        dueDate:       row.dueDate ? new Date(row.dueDate) : null,
+        status:        row.status || "pending",
+        notes:         row.notes || "",
+      }));
+    }
+
+    await animal.save();
+    res.json({ success: true, animal });
+
+  } catch (err) {
+    console.error("SAVE SCHEDULE ERROR:", err);
+    res.status(500).json({ message: "Failed to save schedule" });
+  }
+});
+
+// ---------------------
 // ADD ANIMAL ACTIVITIES (vaccine / deworming)
 // ---------------------
 router.put("/:animalId/activities", protect, async (req, res) => {
@@ -198,49 +243,6 @@ router.delete(
   }
 );
 
-// ---------------------
-// SAVE / UPDATE SCHEDULE (V2)
-// ---------------------
-router.put("/:animalId/schedule", protect, async (req, res) => {
-  try {
-    const animal = await Animal.findOne({
-      _id: req.params.animalId,
-      user: req.user.id,
-    });
 
-    if (!animal) return res.status(404).json({ message: "Animal not found" });
-
-    const { vaccineSchedule, dewormingSchedule } = req.body;
-
-    // Replace the entire schedule arrays
-    if (vaccineSchedule) {
-      animal.vaccineSchedule = vaccineSchedule.map((row) => ({
-        stage:       row.stage || "",
-        vaccineName: row.vaccineName || "",
-        interval:    row.interval || 0,
-        dueDate:     row.dueDate ? new Date(row.dueDate) : null,
-        status:      row.status || "pending",
-        notes:       row.notes || "",
-      }));
-    }
-
-    if (dewormingSchedule) {
-      animal.dewormingSchedule = dewormingSchedule.map((row) => ({
-        dewormingName: row.dewormingName || "",
-        interval:      row.interval || 0,
-        dueDate:       row.dueDate ? new Date(row.dueDate) : null,
-        status:        row.status || "pending",
-        notes:         row.notes || "",
-      }));
-    }
-
-    await animal.save();
-    res.json({ success: true, animal });
-
-  } catch (err) {
-    console.error("SAVE SCHEDULE ERROR:", err);
-    res.status(500).json({ message: "Failed to save schedule" });
-  }
-});
 
 module.exports = router;
