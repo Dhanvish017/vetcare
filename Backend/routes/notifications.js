@@ -51,6 +51,7 @@ router.get("/", protect, async (req, res) => {
       // 💉 VACCINE SCHEDULE
       (animal.vaccineSchedule || []).forEach((row) => {
         if (!row.dueDate || row.status !== "pending") return;
+        if (!row.vaccineName) return;
 
         const dueDate = normalize(row.dueDate);
 
@@ -79,6 +80,7 @@ router.get("/", protect, async (req, res) => {
         if (!row.dueDate || row.status !== "pending") return;
 
         const dueDate = normalize(row.dueDate);
+        if (!row.dewormingName) return;
 
         const payload = {
           _id: `${animal._id}-deworming-${row._id}`,
@@ -318,6 +320,8 @@ router.post("/send-followup/:animalId", protect, async (req, res) => {
   }
 });
 
+
+
 // ---------------------
 // SEND THANK YOU + MARK SCHEDULE ROW COMPLETED
 // ---------------------
@@ -366,6 +370,8 @@ router.post("/send-thank-you/:animalId", protect, async (req, res) => {
     res.status(500).json({ message: "Failed to send thank you" });
   }
 });
+
+
 
 module.exports = router;
 
