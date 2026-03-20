@@ -50,7 +50,7 @@ router.get("/", protect, async (req, res) => {
 
       // 💉 VACCINE SCHEDULE
       (animal.vaccineSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "missed") return;
+        if (!row.dueDate || row.status !== "pending") return;
         if (!row.vaccineName) return;
 
         const dueDate = normalize(row.dueDate);
@@ -78,7 +78,7 @@ router.get("/", protect, async (req, res) => {
 
       // 🪱 DEWORMING SCHEDULE
       (animal.dewormingSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "missed") return;
+        if (!row.dueDate || row.status !== "pending") return;
 
         const dueDate = normalize(row.dueDate);
         if (!row.dewormingName) return;
