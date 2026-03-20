@@ -50,7 +50,7 @@ router.get("/", protect, async (req, res) => {
 
       // 💉 VACCINE SCHEDULE
       (animal.vaccineSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "pending") return;
+        if (!row.dueDate || row.status !== "missed") return;
         if (!row.vaccineName) return;
 
         const dueDate = normalize(row.dueDate);
@@ -58,6 +58,7 @@ router.get("/", protect, async (req, res) => {
         const payload = {
           _id: `${animal._id}-vaccine-${row._id}`,
           type: "vaccine",
+          status: row.status, 
           scheduleRowId: row._id,
           stage: row.stage,
           vaccineName: row.vaccineName,
@@ -77,7 +78,7 @@ router.get("/", protect, async (req, res) => {
 
       // 🪱 DEWORMING SCHEDULE
       (animal.dewormingSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "pending") return;
+        if (!row.dueDate || row.status !== "missed") return;
 
         const dueDate = normalize(row.dueDate);
         if (!row.dewormingName) return;
@@ -200,7 +201,7 @@ router.get("/thank-you", protect, async (req, res) => {
 
       // 💉 VACCINE
       (animal.vaccineSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "pending") return;
+        if (!row.dueDate || row.status !== "completed") return;
 
         const dueDate = normalize(row.dueDate);
         if (dueDate.getTime() === today.getTime()) {
@@ -222,7 +223,7 @@ router.get("/thank-you", protect, async (req, res) => {
 
       // 🪱 DEWORMING
       (animal.dewormingSchedule || []).forEach((row) => {
-        if (!row.dueDate || row.status !== "pending") return;
+        if (!row.dueDate || row.status !== "completed") return;
 
         const dueDate = normalize(row.dueDate);
         if (dueDate.getTime() === today.getTime()) {
