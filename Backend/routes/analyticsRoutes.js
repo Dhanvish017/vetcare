@@ -9,47 +9,19 @@ router.get("/today", protect, async (req, res) => {
     const userId = req.user.id;
 
     // -------------------------
-    // 🕒 TODAY RANGE
+    // TODAY RANGE (IST)
     // -------------------------
     const now = new Date();
-
     const startOfDay = new Date(
       now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
     );
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(startOfDay);
     endOfDay.setHours(23, 59, 59, 999);
-    
 
     // =========================
-    // 1️⃣ VACCINES DUE TODAY
-    // =========================
-    const vaccineDueToday = await Animal.countDocuments({
-      user: userId,
-      "vaccineInfo.nextVaccineDate": {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
-      "vaccineInfo.vaccineStatus": "pending",
-    });
-
-    // =========================
-    // 2️⃣ DEWORMING DUE TODAY
-    // =========================
-    const dewormingDueToday = await Animal.countDocuments({
-      user: userId,
-      "dewormingInfo.nextDewormingDate": {
-        $gte: startOfDay,
-        $lte: endOfDay,
-      },
-      "dewormingInfo.dewormingStatus": "pending",
-    });
-
-    const totalDueToday = vaccineDueToday + dewormingDueToday;
-
-    // =========================
-    // 3️⃣ REMINDERS SENT TODAY
+    // 1️⃣ REMINDERS SENT TODAY (from ReminderLog)
     // =========================
     const vaccineSentToday = await ReminderLog.countDocuments({
       user: userId,
@@ -63,75 +35,77 @@ router.get("/today", protect, async (req, res) => {
       sentAt: { $gte: startOfDay, $lte: endOfDay },
     });
 
-    const totalSentToday = vaccineSentToday + dewormingSentToday;
-
     // =========================
-    // 4️⃣ COMPLETED TODAY
+    // 2️⃣ VISITED TODAY
+    // Count schedule rows whose status is "completed"
+    // and whose dueDate is today (meaning they were due today and completed)
     // =========================
     const animals = await Animal.find({ user: userId });
 
-    let vaccineCompletedToday = 0;
-    let dewormingCompletedToday = 0;
+    let vaccineVisitedToday  = 0;
+    let dewormingVisitedToday = 0;
 
     animals.forEach((animal) => {
-      animal.vaccineHistory.forEach((entry) => {
-        if (
-          entry.status === "completed" &&
-          entry.date >= startOfDay &&
-          entry.date <= endOfDay
-        ) {
-          vaccineCompletedToday++;
+      // 💉 Vaccine schedule rows completed today
+      (animal.vaccineSchedule || []).forEach((row) => {
+        if (row.status === "completed" && row.dueDate) {
+          const due = new Date(row.dueDate);
+          if (due >= startOfDay && due <= endOfDay) {
+            vaccineVisitedToday++;
+          }
         }
       });
 
-      animal.dewormingHistory.forEach((entry) => {
-        if (
-          entry.status === "completed" &&
-          entry.date >= startOfDay &&
-          entry.date <= endOfDay
-        ) {
-          dewormingCompletedToday++;
+      // 🪱 Deworming schedule rows completed today
+      (animal.dewormingSchedule || []).forEach((row) => {
+        if (row.status === "completed" && row.dueDate) {
+          const due = new Date(row.dueDate);
+          if (due >= startOfDay && due <= endOfDay) {
+            dewormingVisitedToday++;
+          }
         }
       });
     });
 
-    const totalCompletedToday =
-      vaccineCompletedToday + dewormingCompletedToday;
+    // =========================
+    // 3️⃣ THANK YOU + MISSED COUNT (from ReminderLog)
+    // =========================
+    const thankyouCount = await ReminderLog.countDocuments({
+      user: userId,
+      reminderWindow: "thankyou",
+      sentAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    const missedCount = await ReminderLog.countDocuments({
+      user: userId,
+      reminderWindow: "missed",
+      sentAt: { $gte: startOfDay, $lte: endOfDay },
+    });
 
     // =========================
-    // 5️⃣ CONVERSION RATE
+    // 4️⃣ CONVERSION RATE
+    // (visited / sent) * 100
     // =========================
+    const totalSent    = vaccineSentToday + dewormingSentToday;
+    const totalVisited = vaccineVisitedToday + dewormingVisitedToday;
+
     const conversionRate =
-      totalSentToday > 0
-        ? ((totalCompletedToday / totalSentToday) * 100).toFixed(1)
-        : 0;
+      totalSent > 0
+        ? ((totalVisited / totalSent) * 100).toFixed(1)
+        : "0.0";
 
-    // =========================
-    // ✅ RESPONSE
-    // =========================
     res.json({
-      vaccineCount: vaccineSentToday,
-      dewormingCount: dewormingSentToday,
-      totalSent: totalSentToday,
-    
-      thankyouCount: await ReminderLog.countDocuments({
-        user: userId,
-        reminderWindow: "thankyou",
-        sentAt: { $gte: startOfDay, $lte: endOfDay },
-      }),
-    
-      missedCount: await ReminderLog.countDocuments({
-        user: userId,
-        reminderWindow: "missed",
-        sentAt: { $gte: startOfDay, $lte: endOfDay },
-      }),
-    
-      vaccineCompleted: vaccineCompletedToday,
-      dewormingCompleted: dewormingCompletedToday,
-    
+      vaccineCount:        vaccineSentToday,
+      dewormingCount:      dewormingSentToday,
+      totalSent,
+      vaccineVisited:      vaccineVisitedToday,
+      dewormingVisited:    dewormingVisitedToday,
+      totalVisited,
+      thankyouCount,
+      missedCount,
       conversionRate,
     });
-    
+
   } catch (error) {
     console.error("ANALYTICS ERROR:", error);
     res.status(500).json({ message: "Failed to fetch analytics" });
