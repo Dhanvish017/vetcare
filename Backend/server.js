@@ -45,7 +45,7 @@ const whatsappRoutes     = require("./routes/whatsapp");
 const dashboardRoutes    = require("./routes/dashboard");
 //const notifyRoutes       = require("./routes/notify");       // existing
 const analyticRoutes     = require("./routes/analyticsRoutes"); // existing
-const templateRoutes     = require("./routes/Template");
+const templateRoutes     = require("./routes/template");
 
 app.use("/",           authRoutes);          // POST /signup, /api/send-otp, /api/verify-otp
 app.use("/api/profile",       profileRoutes);
