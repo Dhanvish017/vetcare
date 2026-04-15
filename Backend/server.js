@@ -57,6 +57,18 @@ app.use("/api/dashboard",     dashboardRoutes);
 //app.use("/api/notify",        notifyRoutes);      // existing notify routes (keep as-is)
 app.use("/api/analytics",     analyticRoutes);    // existing analytics routes (keep as-is)
 app.use("/api/template",      templateRoutes);
+
+
+const pool = require("./config/db");
+
+pool.query("SELECT NOW()", (err, res) => {
+  if (err) {
+    console.error("DB Error:", err);
+  } else {
+    console.log("PostgreSQL Connected:", res.rows);
+  }
+});
+
 // ---------------------
 // START SERVER
 // ---------------------

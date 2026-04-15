@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Animal = require("../models/Pet");
-const Owner = require("../models/Owner");
+const pool = require("../config/db");
 const { protect } = require("../middleware/auth");
 
 // ---------------------
@@ -9,97 +8,139 @@ const { protect } = require("../middleware/auth");
 // ---------------------
 router.post("/", protect, async (req, res) => {
   try {
-    const { ownerId, ...animalData } = req.body;
+    const { ownerId, name, species, breed, age, gender } = req.body;
 
-    if (!ownerId) {
-      return res.status(400).json({ message: "ownerId is required" });
+    if (!ownerId || !name || !species) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const animal = await Animal.create({
-      ...animalData,
-      species: animalData.species?.toLowerCase(),
-      ownerId,
-      user: req.user.id,
-    });
+    const result = await pool.query(
+      `INSERT INTO animals 
+       (user_id, owner_id, name, species, breed, age, gender)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       RETURNING *`,
+      [
+        req.user.id,
+        ownerId,
+        name,
+        species.toLowerCase(),
+        breed,
+        age,
+        gender,
+      ]
+    );
 
-    await Owner.findByIdAndUpdate(ownerId, {
-      $push: { animals: animal._id },
-    });
+    res.status(201).json(result.rows[0]);
 
-    res.status(201).json(animal);
   } catch (err) {
     console.error("ADD ANIMAL ERROR:", err);
-    res.status(400).json({ message: err.message });
+    res.status(500).json({ message: "Failed to add animal" });
   }
 });
+
 
 // ---------------------
 // GET ALL ANIMALS
 // ---------------------
 router.get("/", protect, async (req, res) => {
   try {
-    const animals = await Animal.find({ user: req.user.id });
-    res.json(animals);
+    const result = await pool.query(
+      "SELECT * FROM animals WHERE user_id = $1",
+      [req.user.id]
+    );
+
+    res.json(result.rows);
+
   } catch (err) {
     console.error("FETCH ANIMALS ERROR:", err);
     res.status(500).json({ message: "Failed to fetch animals" });
   }
 });
 
+
 // ---------------------
 // GET ANIMAL BY ID
 // ---------------------
 router.get("/:id", protect, async (req, res) => {
   try {
-    const animal = await Animal.findOne({
-      _id: req.params.id,
-      user: req.user.id,
-    });
-    if (!animal) return res.status(404).json({ message: "Not found" });
+    const result = await pool.query(
+      "SELECT * FROM animals WHERE id = $1 AND user_id = $2",
+      [req.params.id, req.user.id]
+    );
+
+    const animal = result.rows[0];
+
+    if (!animal) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
     res.json(animal);
+
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch animal" });
   }
 });
 
+
 // ---------------------
-// SAVE / UPDATE SCHEDULE (V2)
+// SAVE SCHEDULE
 // ---------------------
 router.put("/:animalId/schedule", protect, async (req, res) => {
   try {
-    const animal = await Animal.findOne({
-      _id: req.params.animalId,
-      user: req.user.id,
-    });
-
-    if (!animal) return res.status(404).json({ message: "Animal not found" });
-
     const { vaccineSchedule, dewormingSchedule } = req.body;
+    const animalId = req.params.animalId;
 
-    // Replace the entire schedule arrays
+    // Delete old schedule
+    await pool.query(
+      "DELETE FROM vaccine_schedule WHERE animal_id = $1",
+      [animalId]
+    );
+
+    await pool.query(
+      "DELETE FROM deworming_schedule WHERE animal_id = $1",
+      [animalId]
+    );
+
+    // Insert new vaccine schedule
     if (vaccineSchedule) {
-      animal.vaccineSchedule = vaccineSchedule.map((row) => ({
-        stage:       row.stage || "",
-        vaccineName: row.vaccineName || "",
-        interval:    row.interval || 0,
-        dueDate:     row.dueDate ? new Date(row.dueDate) : null,
-        status:      row.status || "pending",
-        notes:       row.notes || "",
-      }));
+      for (let row of vaccineSchedule) {
+        await pool.query(
+          `INSERT INTO vaccine_schedule 
+           (animal_id, stage, vaccine_name, interval, due_date, status, notes)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [
+            animalId,
+            row.stage,
+            row.vaccineName,
+            row.interval,
+            row.dueDate,
+            row.status || "pending",
+            row.notes,
+          ]
+        );
+      }
     }
 
+    // Insert deworming schedule
     if (dewormingSchedule) {
-      animal.dewormingSchedule = dewormingSchedule.map((row) => ({
-        dewormingName: row.dewormingName || "",
-        interval:      row.interval || 0,
-        dueDate:       row.dueDate ? new Date(row.dueDate) : null,
-        status:        row.status || "pending",
-        notes:         row.notes || "",
-      }));
+      for (let row of dewormingSchedule) {
+        await pool.query(
+          `INSERT INTO deworming_schedule
+           (animal_id, deworming_name, interval, due_date, status, notes)
+           VALUES ($1,$2,$3,$4,$5,$6)`,
+          [
+            animalId,
+            row.dewormingName,
+            row.interval,
+            row.dueDate,
+            row.status || "pending",
+            row.notes,
+          ]
+        );
+      }
     }
 
-    await animal.save();
-    res.json({ success: true, animal });
+    res.json({ success: true });
 
   } catch (err) {
     console.error("SAVE SCHEDULE ERROR:", err);
@@ -107,142 +148,71 @@ router.put("/:animalId/schedule", protect, async (req, res) => {
   }
 });
 
+
 // ---------------------
-// ADD ANIMAL ACTIVITIES (vaccine / deworming)
+// ADD ACTIVITIES
 // ---------------------
 router.put("/:animalId/activities", protect, async (req, res) => {
   try {
-    const animal = await Animal.findOne({
-      _id: req.params.animalId,
-      user: req.user.id,
-    });
+    const animalId = req.params.animalId;
 
-    if (!animal) return res.status(404).json({ message: "Animal not found" });
-
-    /* =====================
-       💉 VACCINE
-       ===================== */
+    // Vaccine history
     if (req.body.vaccineInfo) {
-      if (animal.vaccineInfo?.vaccineType) {
-        animal.vaccineHistory.push({
-          vaccineType: animal.vaccineInfo.vaccineType,
-          stage: animal.vaccineInfo.stage,
-          status:
-            animal.vaccineInfo.vaccineStatus === "completed"
-              ? "completed"
-              : "missed",
-          date:
-            animal.vaccineInfo.lastVaccineDate ||
-            animal.vaccineInfo.nextVaccineDate,
-        });
-      }
-
-      if (
-        !req.body.vaccineInfo.stage ||
-        !["1st", "2nd", "3rd", "4th", "Annual", "Custom"].includes(
-          req.body.vaccineInfo.stage
-        )
-      ) {
-        return res
-          .status(400)
-          .json({ message: "Invalid or missing vaccine stage" });
-      }
-
-      animal.vaccineInfo = {
-        presentVaccineType: req.body.vaccineInfo.presentVaccineType || "",
-        vaccineType: req.body.vaccineInfo.vaccineType,
-        stage: req.body.vaccineInfo.stage,
-        customStage: req.body.vaccineInfo.customStage || "",
-        nextVaccineDate: req.body.vaccineInfo.nextVaccineDate || null,
-        lastVaccineDate: null,
-        vaccineStatus: "pending",
-        thankYouSent: false,
-      };
+      await pool.query(
+        `INSERT INTO vaccine_history (animal_id, vaccine_type, stage, status, date)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [
+          animalId,
+          req.body.vaccineInfo.vaccineType,
+          req.body.vaccineInfo.stage,
+          "completed",
+          req.body.vaccineInfo.lastVaccineDate,
+        ]
+      );
     }
 
-    /* =====================
-       🪱 DEWORMING
-       ===================== */
+    // Deworming history
     if (req.body.dewormingInfo) {
-      if (animal.dewormingInfo?.dewormingName) {
-        animal.dewormingHistory.push({
-          dewormingName: animal.dewormingInfo.dewormingName,
-          status:
-            animal.dewormingInfo.dewormingStatus === "completed"
-              ? "completed"
-              : "missed",
-          date:
-            animal.dewormingInfo.lastDewormingDate ||
-            animal.dewormingInfo.nextDewormingDate,
-        });
-      }
-
-      animal.dewormingInfo = {
-        presentDewormingName: req.body.dewormingInfo.presentDewormingName || "",
-        dewormingName: req.body.dewormingInfo.dewormingName || "",
-        nextDewormingDate: req.body.dewormingInfo.nextDewormingDate || null,
-        lastDewormingDate: null,
-        dewormingStatus: "pending",
-        thankYouSent: false,
-      };
+      await pool.query(
+        `INSERT INTO deworming_history (animal_id, deworming_name, status, date)
+         VALUES ($1,$2,$3,$4)`,
+        [
+          animalId,
+          req.body.dewormingInfo.dewormingName,
+          "completed",
+          req.body.dewormingInfo.lastDewormingDate,
+        ]
+      );
     }
 
-    await animal.save();
-    res.json(animal);
+    res.json({ success: true });
+
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err, message: err.message });
+    console.error("ACTIVITY ERROR:", err);
+    res.status(500).json({ message: "Failed to add activity" });
   }
 });
+
 
 // ---------------------
 // DELETE ANIMAL
 // ---------------------
 router.delete("/:id", protect, async (req, res) => {
   try {
-    const deleted = await Animal.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user.id,
-    });
+    const result = await pool.query(
+      "DELETE FROM animals WHERE id = $1 AND user_id = $2 RETURNING *",
+      [req.params.id, req.user.id]
+    );
 
-    if (!deleted) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ message: "Animal not found" });
     }
 
     res.json({ message: "Animal deleted successfully" });
+
   } catch (err) {
-    res.status(500).json({ message: "Delete failed", error: err.message });
+    res.status(500).json({ message: "Delete failed" });
   }
 });
-
-// ---------------------
-// DELETE SINGLE VACCINE HISTORY ENTRY
-// ---------------------
-router.delete(
-  "/:animalId/vaccine-history/:historyIndex",
-  protect,
-  async (req, res) => {
-    try {
-      const { animalId, historyIndex } = req.params;
-
-      const animal = await Animal.findOne({
-        _id: animalId,
-        user: req.user.id,
-      });
-
-      if (!animal) return res.status(404).json({ message: "Animal not found" });
-
-      animal.vaccineHistory.splice(historyIndex, 1);
-      await animal.save();
-
-      res.json(animal);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Failed to delete entry" });
-    }
-  }
-);
-
-
 
 module.exports = router;

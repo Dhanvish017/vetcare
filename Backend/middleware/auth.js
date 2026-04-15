@@ -1,19 +1,16 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const pool = require("../config/db");
 
 const protect = async (req, res, next) => {
   let token;
 
-  // Check header
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
     try {
-      // Extract token
       token = req.headers.authorization.split(" ")[1];
 
-      // Verify token
       const decoded = jwt.verify(
         token,
         process.env.JWT_SECRET || "vinay_super_secret"
@@ -21,14 +18,22 @@ const protect = async (req, res, next) => {
 
       console.log("DECODED:", decoded);
 
-      // Attach user to request
-      req.user = await User.findById(decoded.id).select("-password");
+      // 🔄 Fetch user from PostgreSQL
+      const result = await pool.query(
+        "SELECT * FROM users WHERE id = $1",
+        [decoded.id]
+      );
 
-      if (!req.user) {
+      const user = result.rows[0];
+
+      if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
 
-      return next(); // IMPORTANT — stops middleware here
+      // attach user
+      req.user = user;
+
+      return next();
 
     } catch (err) {
       console.log("JWT ERROR:", err);
@@ -36,7 +41,6 @@ const protect = async (req, res, next) => {
     }
   }
 
-  // If no token was found
   return res.status(401).json({ message: "No token provided" });
 };
 

@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
+const pool = require("../config/db");
 const { protect } = require("../middleware/auth");
 const messageTemplates = require("../utils/messageTemplates");
 
 // ---------------------
-// SAVE SELECTED WHATSAPP TEMPLATE
+// SAVE SELECTED TEMPLATE
 // ---------------------
 router.post("/whatsapp-template", protect, async (req, res) => {
   try {
@@ -15,30 +15,41 @@ router.post("/whatsapp-template", protect, async (req, res) => {
       return res.status(400).json({ message: "Template is required" });
     }
 
-    await User.findByIdAndUpdate(req.user.id, {
-      whatsappTemplate: templateId,
-    });
+    await pool.query(
+      "UPDATE users SET whatsapp_template = $1 WHERE id = $2",
+      [templateId, req.user.id]
+    );
 
     res.json({ success: true });
+
   } catch (err) {
     res.status(500).json({ message: "Failed to save template" });
   }
 });
 
+
 // ---------------------
-// GET SELECTED WHATSAPP TEMPLATE
+// GET SELECTED TEMPLATE
 // ---------------------
 router.get("/whatsapp-template", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("whatsappTemplate");
-    res.json({ templateId: user.whatsappTemplate });
+    const result = await pool.query(
+      "SELECT whatsapp_template FROM users WHERE id = $1",
+      [req.user.id]
+    );
+
+    const user = result.rows[0];
+
+    res.json({ templateId: user?.whatsapp_template });
+
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch template" });
   }
 });
 
+
 // ---------------------
-// LIST ALL AVAILABLE TEMPLATES
+// LIST ALL TEMPLATES
 // ---------------------
 router.get("/templates", protect, (req, res) => {
   try {
@@ -49,10 +60,12 @@ router.get("/templates", protect, (req, res) => {
     }));
 
     res.json(templates);
+
   } catch (err) {
     res.status(500).json({ message: "Failed to load templates" });
   }
 });
+
 
 // ---------------------
 // BUILD WHATSAPP MESSAGE
@@ -61,8 +74,16 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
   try {
     const { reminder, messageType } = req.body;
 
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const result = await pool.query(
+      "SELECT * FROM users WHERE id = $1",
+      [req.user.id]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     let template;
 
@@ -72,22 +93,17 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
       template = messageTemplates.MISSED_FOLLOWUP;
     } else {
       template =
-        messageTemplates[user.whatsappTemplate] || messageTemplates.FRIENDLY_V1;
-    }
-
-    if (!template) {
-      return res.status(400).json({ message: "Template not selected" });
+        messageTemplates[user.whatsapp_template] ||
+        messageTemplates.FRIENDLY_V1;
     }
 
     const senderName =
-      user.accountType === "doctor"
-        ? `Dr. ${user.name || ""}`
-        : user.clinicName || "";
+      user.account_type === "clinic"
+        ? user.clinic_name || ""
+        : `Dr. ${user.name || ""}`;
 
     const activityType =
-      String(reminder.type || "")
-        .trim()
-        .toLowerCase() === "deworming"
+      String(reminder.type || "").toLowerCase() === "deworming"
         ? "Deworming"
         : "Vaccination";
 
@@ -108,8 +124,9 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
       .replace(/{{senderName}}/g, senderName);
 
     res.json({ message });
+
   } catch (err) {
-    console.error("BUILD WHATSAPP MESSAGE ERROR:", err);
+    console.error("BUILD MESSAGE ERROR:", err);
     res.status(500).json({ message: "Failed to build message" });
   }
 });

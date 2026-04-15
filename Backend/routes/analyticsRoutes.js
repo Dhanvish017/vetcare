@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Animal = require("../models/Pet");
-const ReminderLog = require("../models/ReminderLog");
+const pool = require("../config/db");
 const { protect } = require("../middleware/auth");
 
 router.get("/today", protect, async (req, res) => {
@@ -21,72 +20,75 @@ router.get("/today", protect, async (req, res) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     // =========================
-    // 1️⃣ REMINDERS SENT TODAY (from ReminderLog)
+    // 1️⃣ REMINDERS SENT TODAY
     // =========================
-    const vaccineSentToday = await ReminderLog.countDocuments({
-      user: userId,
-      type: "vaccine",
-      sentAt: { $gte: startOfDay, $lte: endOfDay },
-    });
+    const vaccineSent = await pool.query(
+      `SELECT COUNT(*) FROM reminder_logs
+       WHERE user_id = $1 AND type = 'vaccine'
+       AND sent_at BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
 
-    const dewormingSentToday = await ReminderLog.countDocuments({
-      user: userId,
-      type: "deworming",
-      sentAt: { $gte: startOfDay, $lte: endOfDay },
-    });
+    const dewormingSent = await pool.query(
+      `SELECT COUNT(*) FROM reminder_logs
+       WHERE user_id = $1 AND type = 'deworming'
+       AND sent_at BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
+
+    const vaccineSentToday = parseInt(vaccineSent.rows[0].count);
+    const dewormingSentToday = parseInt(dewormingSent.rows[0].count);
 
     // =========================
     // 2️⃣ VISITED TODAY
-    // Count schedule rows whose status is "completed"
-    // and whose dueDate is today (meaning they were due today and completed)
     // =========================
-    const animals = await Animal.find({ user: userId });
+    const vaccineVisitedRes = await pool.query(
+      `SELECT COUNT(*) FROM vaccine_schedule vs
+       JOIN animals a ON vs.animal_id = a.id
+       WHERE a.user_id = $1
+       AND vs.status = 'completed'
+       AND vs.due_date BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
 
-    let vaccineVisitedToday  = 0;
-    let dewormingVisitedToday = 0;
+    const dewormingVisitedRes = await pool.query(
+      `SELECT COUNT(*) FROM deworming_schedule ds
+       JOIN animals a ON ds.animal_id = a.id
+       WHERE a.user_id = $1
+       AND ds.status = 'completed'
+       AND ds.due_date BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
 
-    animals.forEach((animal) => {
-      // 💉 Vaccine schedule rows completed today
-      (animal.vaccineSchedule || []).forEach((row) => {
-        if (row.status === "completed" && row.dueDate) {
-          const due = new Date(row.dueDate);
-          if (due >= startOfDay && due <= endOfDay) {
-            vaccineVisitedToday++;
-          }
-        }
-      });
-
-      // 🪱 Deworming schedule rows completed today
-      (animal.dewormingSchedule || []).forEach((row) => {
-        if (row.status === "completed" && row.dueDate) {
-          const due = new Date(row.dueDate);
-          if (due >= startOfDay && due <= endOfDay) {
-            dewormingVisitedToday++;
-          }
-        }
-      });
-    });
+    const vaccineVisitedToday = parseInt(vaccineVisitedRes.rows[0].count);
+    const dewormingVisitedToday = parseInt(dewormingVisitedRes.rows[0].count);
 
     // =========================
-    // 3️⃣ THANK YOU + MISSED COUNT (from ReminderLog)
+    // 3️⃣ THANK YOU + MISSED
     // =========================
-    const thankyouCount = await ReminderLog.countDocuments({
-      user: userId,
-      reminderWindow: "thankyou",
-      sentAt: { $gte: startOfDay, $lte: endOfDay },
-    });
+    const thankyouRes = await pool.query(
+      `SELECT COUNT(*) FROM reminder_logs
+       WHERE user_id = $1
+       AND reminder_window = 'thankyou'
+       AND sent_at BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
 
-    const missedCount = await ReminderLog.countDocuments({
-      user: userId,
-      reminderWindow: "missed",
-      sentAt: { $gte: startOfDay, $lte: endOfDay },
-    });
+    const missedRes = await pool.query(
+      `SELECT COUNT(*) FROM reminder_logs
+       WHERE user_id = $1
+       AND reminder_window = 'missed'
+       AND sent_at BETWEEN $2 AND $3`,
+      [userId, startOfDay, endOfDay]
+    );
+
+    const thankyouCount = parseInt(thankyouRes.rows[0].count);
+    const missedCount = parseInt(missedRes.rows[0].count);
 
     // =========================
     // 4️⃣ CONVERSION RATE
-    // (visited / sent) * 100
     // =========================
-    const totalSent    = vaccineSentToday + dewormingSentToday;
+    const totalSent = vaccineSentToday + dewormingSentToday;
     const totalVisited = vaccineVisitedToday + dewormingVisitedToday;
 
     const conversionRate =
@@ -95,11 +97,11 @@ router.get("/today", protect, async (req, res) => {
         : "0.0";
 
     res.json({
-      vaccineCount:        vaccineSentToday,
-      dewormingCount:      dewormingSentToday,
+      vaccineCount: vaccineSentToday,
+      dewormingCount: dewormingSentToday,
       totalSent,
-      vaccineVisited:      vaccineVisitedToday,
-      dewormingVisited:    dewormingVisitedToday,
+      vaccineVisited: vaccineVisitedToday,
+      dewormingVisited: dewormingVisitedToday,
       totalVisited,
       thankyouCount,
       missedCount,

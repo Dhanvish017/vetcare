@@ -1,42 +1,52 @@
 const MESSAGE_TEMPLATES = require("./messageTemplates");
 
-function buildWhatsAppMessage(messageType = "reminder", data = {}) {
-  let templateId = "FRIENDLY_V1"; // default reminder
+const TEMPLATE_MAP = {
+  thankyou: "THANK_YOU_SIMPLE",
+  missed: "MISSED_FOLLOWUP",
+  reminder_v2: "FRIENDLY_V2",
+  emotional: "EMOTIONAL_CARING",
+};
 
-  // 🔥 Decide template based on messageType
-  if (messageType === "thankyou") {
-    templateId = "THANK_YOU_SIMPLE";
-  } else if (messageType === "missed") {
-    templateId = "MISSED_FOLLOWUP";
-  } else if (messageType === "reminder_v2") {
-    templateId = "FRIENDLY_V2";
-  } else if (messageType === "emotional") {
-    templateId = "EMOTIONAL_CARING";
-  }
+const safe = (val, fallback) => (val ? val : fallback);
+
+function buildWhatsAppMessage(messageType = "reminder", data = {}) {
+  const templateId = TEMPLATE_MAP[messageType] || "FRIENDLY_V1";
 
   const template =
     MESSAGE_TEMPLATES[templateId] || MESSAGE_TEMPLATES.FRIENDLY_V1;
 
-  // 🔥 Decide sender automatically
+  // ✅ Sender logic (fixed)
   const senderName =
-    data.accountType === "doctor"
-      ? `Dr. ${data.doctorName || ""}`
-      : data.clinicName || "";
+    data.accountType === "clinic"
+      ? safe(data.clinicName, "")
+      : `Dr. ${safe(data.doctorName || data.name, "")}`;
 
-  // 🔥 Decide activity type automatically
+  // ✅ Activity type
   const activityType =
-    data.activityType === "deworming"
+    String(data.activityType || "").toLowerCase() === "deworming"
       ? "Deworming"
       : "Vaccination";
 
-  return template.body
-    .replace(/{{ownerName}}/g, data.ownerName || "")
-    .replace(/{{petName}}/g, data.petName || "")
-    .replace(/{{petEmoji}}/g, data.petEmoji || "🐾")
-    .replace(/{{dueDate}}/g, data.dueDate || "")
-    .replace(/{{contact}}/g, data.contact || "")
-    .replace(/{{senderName}}/g, senderName)
-    .replace(/{{activityType}}/g, activityType);
+  const replacements = {
+    ownerName: safe(data.ownerName, "Pet Owner"),
+    petName: safe(data.petName, "your pet"),
+    petEmoji: safe(data.petEmoji, "🐾"),
+    dueDate: safe(data.dueDate, ""),
+    contact: safe(data.contact, ""),
+    senderName,
+    activityType,
+  };
+
+  let message = template.body;
+
+  Object.keys(replacements).forEach((key) => {
+    message = message.replace(
+      new RegExp(`{{${key}}}`, "g"),
+      replacements[key]
+    );
+  });
+
+  return message;
 }
 
 module.exports = {

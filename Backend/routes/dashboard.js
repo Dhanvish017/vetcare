@@ -1,16 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const Animal = require("../models/Pet");
+const pool = require("../config/db");
 const { protect } = require("../middleware/auth");
 
-const IST_OFFSET_MINUTES = 330;
-
-const getISTDate = (date = new Date()) => {
-  const d = new Date(date);
-  d.setMinutes(d.getMinutes() + IST_OFFSET_MINUTES);
-  return d;
-};
-
+// ---------------------
+// HELPERS
+// ---------------------
 const normalize = (date) => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -22,88 +17,89 @@ const normalize = (date) => {
 // ---------------------
 router.get("/stats", protect, async (req, res) => {
   try {
-    const animals = await Animal.find({ user: req.user.id }).populate(
-      "ownerId", "name phone"
+    const userId = req.user.id;
+
+    const today = normalize(new Date());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // =========================
+    // 💉 VACCINE COUNTS
+    // =========================
+    const vaccineCounts = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE status = 'pending')   AS pending,
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed
+       FROM vaccine_schedule vs
+       JOIN animals a ON vs.animal_id = a.id
+       WHERE a.user_id = $1`,
+      [userId]
     );
 
-    let vaccinePending     = 0;
-    let vaccineCompleted   = 0;
-    let dewormingPending   = 0;
-    let dewormingCompleted = 0;
+    // =========================
+    // 🪱 DEWORMING COUNTS
+    // =========================
+    const dewormingCounts = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE status = 'pending')   AS pending,
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed
+       FROM deworming_schedule ds
+       JOIN animals a ON ds.animal_id = a.id
+       WHERE a.user_id = $1`,
+      [userId]
+    );
 
-    const today          = normalize(getISTDate());
-    const todayVaccine   = [];
-    const todayDeworming = [];
+    // =========================
+    // TODAY VACCINE
+    // =========================
+    const todayVaccine = await pool.query(
+      `SELECT 
+        vs.*, 
+        a.name AS animal_name,
+        a.species,
+        o.name AS owner_name,
+        o.phone AS owner_phone
+       FROM vaccine_schedule vs
+       JOIN animals a ON vs.animal_id = a.id
+       JOIN owners o ON a.owner_id = o.id
+       WHERE a.user_id = $1
+       AND vs.status = 'pending'
+       AND vs.due_date >= $2 AND vs.due_date < $3`,
+      [userId, today, tomorrow]
+    );
 
-    animals.forEach((animal) => {
-
-      // 💉 VACCINE SCHEDULE
-      (animal.vaccineSchedule || []).forEach((row) => {
-        if (!row.vaccineName) return; // skip rows with no name
-
-        if (row.status === "completed") {
-          vaccineCompleted++;
-        } else if (row.status === "pending") {
-          vaccinePending++;
-
-          if (row.dueDate) {
-            const dueDate = normalize(row.dueDate);
-            if (dueDate.getTime() === today.getTime()) {
-              todayVaccine.push({
-                animalId:    animal._id,
-                animalName:  animal.name,
-                species:     animal.species,
-                ownerName:   animal.ownerId?.name  || "Pet Owner",
-                ownerPhone:  animal.ownerId?.phone || "",
-                stage:       row.stage,
-                vaccineName: row.vaccineName,
-                dueDate:     row.dueDate,
-              });
-            }
-          }
-        }
-      });
-
-      // 🪱 DEWORMING SCHEDULE
-      (animal.dewormingSchedule || []).forEach((row) => {
-        if (!row.dewormingName) return; // skip rows with no name
-
-        if (row.status === "completed") {
-          dewormingCompleted++;
-        } else if (row.status === "pending") {
-          dewormingPending++;
-
-          if (row.dueDate) {
-            const dueDate = normalize(row.dueDate);
-            if (dueDate.getTime() === today.getTime()) {
-              todayDeworming.push({
-                animalId:      animal._id,
-                animalName:    animal.name,
-                species:       animal.species,
-                ownerName:     animal.ownerId?.name  || "Pet Owner",
-                ownerPhone:    animal.ownerId?.phone || "",
-                dewormingName: row.dewormingName,
-                dueDate:       row.dueDate,
-              });
-            }
-          }
-        }
-      });
-    });
+    // =========================
+    // TODAY DEWORMING
+    // =========================
+    const todayDeworming = await pool.query(
+      `SELECT 
+        ds.*, 
+        a.name AS animal_name,
+        a.species,
+        o.name AS owner_name,
+        o.phone AS owner_phone
+       FROM deworming_schedule ds
+       JOIN animals a ON ds.animal_id = a.id
+       JOIN owners o ON a.owner_id = o.id
+       WHERE a.user_id = $1
+       AND ds.status = 'pending'
+       AND ds.due_date >= $2 AND ds.due_date < $3`,
+      [userId, today, tomorrow]
+    );
 
     res.json({
       vaccine: {
-        pending:   vaccinePending,
-        completed: vaccineCompleted,
+        pending:   parseInt(vaccineCounts.rows[0].pending),
+        completed: parseInt(vaccineCounts.rows[0].completed),
       },
       deworming: {
-        pending:   dewormingPending,
-        completed: dewormingCompleted,
+        pending:   parseInt(dewormingCounts.rows[0].pending),
+        completed: parseInt(dewormingCounts.rows[0].completed),
       },
       today: {
-        vaccine:   todayVaccine,
-        deworming: todayDeworming,
-        total:     todayVaccine.length + todayDeworming.length,
+        vaccine:   todayVaccine.rows,
+        deworming: todayDeworming.rows,
+        total:     todayVaccine.rows.length + todayDeworming.rows.length,
       },
     });
 
