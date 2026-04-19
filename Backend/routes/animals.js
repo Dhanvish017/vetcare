@@ -8,7 +8,7 @@ const { protect } = require("../middleware/auth");
 // ---------------------
 router.post("/", protect, async (req, res) => {
   try {
-    const { ownerId, name, species, breed, age, gender } = req.body;
+    const { owner_id, name, species, breed, age, gender } = req.body;
 
     if (!ownerId || !name || !species) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -21,7 +21,7 @@ router.post("/", protect, async (req, res) => {
        RETURNING *`,
       [
         req.user.id,
-        ownerId,
+        owner_id,
         name,
         species.toLowerCase(),
         breed,
