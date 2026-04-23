@@ -46,6 +46,8 @@ const dashboardRoutes    = require("./routes/dashboard");
 //const notifyRoutes       = require("./routes/notify");       // existing
 const analyticRoutes     = require("./routes/analyticsRoutes"); // existing
 const templateRoutes     = require("./routes/template");
+const reportRoutes       = require("./routes/report");
+
 
 app.use("/",           authRoutes);          // POST /signup, /api/send-otp, /api/verify-otp
 app.use("/api/profile",       profileRoutes);
@@ -57,6 +59,7 @@ app.use("/api/dashboard",     dashboardRoutes);
 //app.use("/api/notify",        notifyRoutes);      // existing notify routes (keep as-is)
 app.use("/api/analytics",     analyticRoutes);    // existing analytics routes (keep as-is)
 app.use("/api/template",      templateRoutes);
+app.use("/api/report",        reportRoutes);
 
 
 const pool = require("./config/db");
