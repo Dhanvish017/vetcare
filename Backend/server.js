@@ -43,7 +43,7 @@ const ownerRoutes        = require("./routes/owners");
 const notificationRoutes = require("./routes/notifications");
 const whatsappRoutes     = require("./routes/whatsapp");
 const dashboardRoutes    = require("./routes/dashboard");
-//const notifyRoutes       = require("./routes/notify");       // existing
+const notifyRoutes       = require("./routes/notify");       // existing ////////////////////
 const analyticRoutes     = require("./routes/analyticsRoutes"); // existing
 const templateRoutes     = require("./routes/template");
 const reportRoutes       = require("./routes/report");
@@ -56,7 +56,7 @@ app.use("/api/owners",        ownerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/notify",        whatsappRoutes);
 app.use("/api/dashboard",     dashboardRoutes);
-//app.use("/api/notify",        notifyRoutes);      // existing notify routes (keep as-is)
+app.use("/api/notify",        notifyRoutes);      // existing notify routes (keep as-is)//////////////////
 app.use("/api/analytics",     analyticRoutes);    // existing analytics routes (keep as-is)
 app.use("/api/template",      templateRoutes);
 app.use("/api/report",        reportRoutes);
