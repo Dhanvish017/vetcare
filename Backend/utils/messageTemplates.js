@@ -1,80 +1,198 @@
 module.exports = {
-  FRIENDLY_V1: {
-    id: "FRIENDLY_V1",
-    label: "Simple Reminder Version 1",
-    body: `
-Hi *{{ownerName}}* 👋
+  // ---------------------
+  // 🐾 NEW OWNER
+  // ---------------------
+  NEW_OWNER: [
+    {
+      id: "NEW_OWNER_1",
+      label: "New Owner - Warm",
+      body: `
+Hi *{{ownerName}}*,
 
-It’s a gentle reminder.
-Your *{{petName}}* {{petEmoji}} is due for *{{activityType}}* on *{{dueDate}}*.
+There’s something magical about bringing home a little star like *{{petName}}* 🐾✨  
+Life instantly feels warmer, happier, and more alive 💛  
 
-– From *{{senderName}}*
-📞 *{{contact}}*
+Happy to walk this journey with you.
+
+— *{{senderName}}*
 `.trim(),
-  },
+    },
+    {
+      id: "NEW_OWNER_2",
+      label: "New Owner - Friendly",
+      body: `
+Hey *{{ownerName}}* 👋  
 
-  FRIENDLY_V2: {
-    id: "FRIENDLY_V2",
-    label: "Simple Reminder Version 2",
-    body: `
-Hello *{{ownerName}}*,
+Congrats on your new baby 🐶❤️  
+*{{petName}}* already looks like a boss at home 😄  
 
-Your *{{petName}}* is due for *{{activityType}}* on *{{dueDate}}*.
+We’re always here for you 👍  
 
-Please contact *{{contact}}*
-
-– *{{senderName}}*
+— *{{senderName}}*
 `.trim(),
-  },
+    },
+  ],
 
-  EMOTIONAL_CARING: {
-    id: "EMOTIONAL_CARING",
-    label: "Emotional & Caring Reminder",
-    body: `
-Dear *{{ownerName}}*,
+  // ---------------------
+  // 🎂 BIRTHDAY
+  // ---------------------
+  BIRTHDAY: [
+    {
+      id: "BIRTHDAY_1",
+      label: "Birthday - Warm",
+      body: `
+Hi *{{ownerName}}*,
 
-We know that *{{petName}}* is not just a pet, but a beloved family member ❤️  
-The love and care you show truly matter.
+Wishing a very happy birthday to dear *{{petName}}* 🎉🐾  
+Here’s to many more happy, healthy years ahead 💛  
 
-This is a gentle reminder that *{{petName}}*’s *{{activityType}}* is due on *{{dueDate}}*.
+— *{{senderName}}*
+`.trim(),
+    },
+    {
+      id: "BIRTHDAY_2",
+      label: "Birthday - Fun",
+      body: `
+Hey 😄  
 
-Regular care helps protect them from illness and discomfort.
+*{{petName}}* is now officially one year more mischievous 😂🐾  
+Happy Birthday 🎉  
 
-Please call *{{contact}}* to book an appointment.
+Treats double today 😄❤️
+`.trim(),
+    },
+  ],
+
+  // ---------------------
+  // ❤️ LOYALTY / CHECK-IN
+  // ---------------------
+  LOYALTY: [
+    {
+      id: "LOYALTY_1",
+      label: "Check-in - Simple",
+      body: `
+Hi *{{ownerName}}* ❤️  
+
+Just checking in…  
+How is *{{petName}}* doing these days? 🐾  
+
+— *{{senderName}}*
+`.trim(),
+    },
+    {
+      id: "LOYALTY_2",
+      label: "Check-in - Fun",
+      body: `
+Hey 😄  
+
+Just checking… your pet still being naughty ah? 🐶❤️  
+`.trim(),
+    },
+  ],
+
+  // ---------------------
+  // 💉 REMINDER (MAIN)
+  // ---------------------
+  REMINDER: {
+    SIMPLE: [
+      {
+        id: "REMINDER_SIMPLE_1",
+        label: "Simple Reminder",
+        body: `
+Hello *{{ownerName}}*,  
+
+Your *{{petName}}*’s *{{activityType}}* is due on *{{dueDate}}*.  
+
+— *{{senderName}}* 🐾
+`.trim(),
+      },
+    ],
+
+    EMOTIONAL: [
+      {
+        id: "REMINDER_EMOTIONAL_1",
+        label: "Emotional Reminder",
+        body: `
+Dear *{{ownerName}}*,  
+
+We know *{{petName}}* is not just a pet, but a beloved family member ❤️  
+
+This is a gentle reminder that *{{activityType}}* is due on *{{dueDate}}*.  
 
 With care,  
-*{{senderName}}* 🐾
+*{{senderName}}*
 `.trim(),
-  },
+      },
+    ],
 
-  THANK_YOU_SIMPLE: {
-    id: "THANK_YOU_SIMPLE",
-    label: "Thank You After Visit",
-    body: `
-Thank you for visiting us today ❤️
+    PRICE: [
+      {
+        id: "REMINDER_PRICE_1",
+        label: "Price Sensitive",
+        body: `
+Hi 👋 *{{ownerName}}*,  
 
-We truly appreciate your trust in our care for *{{petName}}*.
+Vaccination for *{{petName}}* is due on *{{dueDate}}*.  
+
+It’s one of the most cost-effective ways to protect them 👍  
 
 — *{{senderName}}*
 `.trim(),
-  },
+      },
+    ],
 
-  MISSED_FOLLOWUP: {
-    id: "MISSED_FOLLOWUP",
-    label: "Missed Follow-up (Vaccine / Deworming)",
-    body: `
-Hello *{{ownerName}}*,
+    OWNER: [
+      {
+        id: "REMINDER_OWNER_1",
+        label: "Owner-Centric",
+        body: `
+Dear *{{ownerName}}*,  
 
-We noticed that *{{petName}}*’s *{{activityType}}* is overdue.
+We know how much you care for *{{petName}}* ❤️  
 
-Delaying this can increase health risks.  
-Please contact *{{contact}}* to schedule a visit at the earliest.
+Next step: *{{activityType}}* on *{{dueDate}}*.  
 
-We’re here to help 🐾  
+Just continuing the great care you already give 👍  
+
 — *{{senderName}}*
 `.trim(),
+      },
+    ],
   },
+
+  // ---------------------
+  // 🙏 THANK YOU
+  // ---------------------
+  THANK_YOU: [
+    {
+      id: "THANK_YOU_1",
+      label: "Thank You Simple",
+      body: `
+Thank you for visiting us today ❤️  
+
+We appreciate your trust in our care for *{{petName}}*.  
+
+— *{{senderName}}*
+`.trim(),
+    },
+  ],
+
+  // ---------------------
+  // ⚠ MISSED FOLLOW-UP
+  // ---------------------
+  MISSED: [
+    {
+      id: "MISSED_1",
+      label: "Missed - Caring",
+      body: `
+Dear *{{ownerName}}*,  
+
+We noticed *{{petName}}*’s *{{activityType}}* may have been missed.  
+
+We recommend scheduling it soon to keep them protected 🐾  
+
+— *{{senderName}}*
+`.trim(),
+    },
+  ],
 };
-
-
-  

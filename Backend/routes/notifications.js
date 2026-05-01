@@ -43,16 +43,18 @@ router.get("/", protect, async (req, res) => {
       const dueDate = normalize(row.due_date);
 
       const payload = {
-        type: "vaccine",
-        stage: row.stage,
-        vaccineName: row.vaccine_name,
-        dueDate,
-        animalId: row.animal_id,
-        animalName: row.animal_name,
-        species: row.species,
-        ownerName: row.owner_name,
-        ownerPhone: row.owner_phone,
-      };
+  type: "vaccine",
+  activityType: "vaccine",
+  messageType: "reminder",
+  stage: row.stage,
+  vaccineName: row.vaccine_name,
+  dueDate: row.due_date.toISOString().split("T")[0],
+  animalId: row.animal_id,
+  animalName: row.animal_name,
+  species: row.species,
+  ownerName: row.owner_name,
+  ownerPhone: row.owner_phone,
+};
 
       if (dueDate.getTime() === today.getTime()) notifications.today.push(payload);
       if (dueDate.getTime() === tomorrow.getTime()) notifications.tomorrow.push(payload);
@@ -75,16 +77,18 @@ router.get("/", protect, async (req, res) => {
 
       const dueDate = normalize(row.due_date);
 
-      const payload = {
-        type: "deworming",
-        dewormingName: row.deworming_name,
-        dueDate,
-        animalId: row.animal_id,
-        animalName: row.animal_name,
-        species: row.species,
-        ownerName: row.owner_name,
-        ownerPhone: row.owner_phone,
-      };
+    const payload = {
+  type: "deworming",
+  activityType: "deworming",
+  messageType: "reminder",
+  dewormingName: row.deworming_name,
+  dueDate: row.due_date.toISOString().split("T")[0],
+  animalId: row.animal_id,
+  animalName: row.animal_name,
+  species: row.species,
+  ownerName: row.owner_name,
+  ownerPhone: row.owner_phone,
+};
 
       if (dueDate.getTime() === today.getTime()) notifications.today.push(payload);
       if (dueDate.getTime() === tomorrow.getTime()) notifications.tomorrow.push(payload);
@@ -125,7 +129,18 @@ router.get("/missed", protect, async (req, res) => {
       thirdDay.setDate(thirdDay.getDate() + 3);
 
       if (today >= normalize(thirdDay)) {
-        missed.push(row);
+      missed.push({
+  type: "vaccine",
+  activityType: "vaccine",
+  messageType: "missed", // 👈 IMPORTANT
+  stage: row.stage,
+  vaccineName: row.vaccine_name,
+  dueDate: row.due_date.toISOString().split("T")[0] || "",
+  animalId: row.animal_id,
+  animalName: row.animal_name,
+  ownerName: row.owner_name,
+  ownerPhone: row.phone,
+});
       }
     });
 
