@@ -53,15 +53,47 @@ router.get("/whatsapp-template", protect, async (req, res) => {
 // ---------------------
 router.get("/templates", protect, (req, res) => {
   try {
-    const templates = Object.values(messageTemplates).map((t) => ({
-      id: t.id,
-      label: t.label,
-      preview: t.body.slice(0, 120) + "...",
-    }));
+    const templates = [];
+
+    Object.keys(messageTemplates).forEach((category) => {
+      const value = messageTemplates[category];
+
+      // ✅ Case 1: direct array (BIRTHDAY, THANK_YOU, etc.)
+      if (Array.isArray(value)) {
+        value.forEach((t) => {
+          templates.push({
+            id: t.id,
+            label: t.label,
+            preview: t.body?.slice(0, 120) || "",
+            category,
+          });
+        });
+      }
+
+      // ✅ Case 2: nested object (REMINDER)
+      else if (typeof value === "object") {
+        Object.keys(value).forEach((style) => {
+          const arr = value[style];
+
+          if (Array.isArray(arr)) {
+            arr.forEach((t) => {
+              templates.push({
+                id: t.id,
+                label: t.label,
+                preview: t.body?.slice(0, 120) || "",
+                category,
+                style,
+              });
+            });
+          }
+        });
+      }
+    });
 
     res.json(templates);
 
   } catch (err) {
+    console.error("TEMPLATE ERROR:", err);
     res.status(500).json({ message: "Failed to load templates" });
   }
 });
@@ -85,17 +117,25 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    let template;
+   const pickRandom = (arr) =>
+  arr[Math.floor(Math.random() * arr.length)];
 
-    if (messageType === "thankyou") {
-      template = messageTemplates.THANK_YOU_SIMPLE;
-    } else if (messageType === "missed") {
-      template = messageTemplates.MISSED_FOLLOWUP;
-    } else {
-      template =
-        messageTemplates[user.whatsapp_template] ||
-        messageTemplates.FRIENDLY_V1;
-    }
+let template;
+
+if (messageType === "thankyou") {
+  template = pickRandom(messageTemplates.THANK_YOU);
+} else if (messageType === "missed") {
+  template = pickRandom(messageTemplates.MISSED);
+} else {
+  // reminder
+  const style = user.whatsapp_template || "SIMPLE";
+
+  const templates =
+    messageTemplates.REMINDER[style] ||
+    messageTemplates.REMINDER.SIMPLE;
+
+  template = pickRandom(templates);
+}
 
     const senderName =
       user.account_type === "clinic"
