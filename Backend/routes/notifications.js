@@ -233,7 +233,10 @@ router.get("/thank-you", protect, async (req, res) => {
   try {
     const thankYou = [];
 
-    // Recently completed vaccines
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // ✅ Completed vaccines today
     const vaccineRes = await pool.query(
       `SELECT vs.*, 
               a.name AS animal_name,
@@ -245,7 +248,7 @@ router.get("/thank-you", protect, async (req, res) => {
        JOIN owners o ON a.owner_id = o.id
        WHERE a.user_id = $1
          AND vs.status = 'completed'
-         AND vs.updated_at >= NOW() - INTERVAL '2 days'`,
+         AND DATE(vs.due_date) = CURRENT_DATE`,
       [req.user.id]
     );
 
@@ -259,13 +262,11 @@ router.get("/thank-you", protect, async (req, res) => {
         species: row.species,
         ownerName: row.owner_name,
         ownerPhone: row.owner_phone,
-        dueDate: row.updated_at
-          ? new Date(row.updated_at).toISOString().split("T")[0]
-          : "",
+        dueDate: row.due_date,
       });
     });
 
-    // Recently completed deworming
+    // ✅ Completed deworming today
     const dewormRes = await pool.query(
       `SELECT ds.*, 
               a.name AS animal_name,
@@ -277,7 +278,7 @@ router.get("/thank-you", protect, async (req, res) => {
        JOIN owners o ON a.owner_id = o.id
        WHERE a.user_id = $1
          AND ds.status = 'completed'
-         AND ds.updated_at >= NOW() - INTERVAL '2 days'`,
+         AND DATE(ds.due_date) = CURRENT_DATE`,
       [req.user.id]
     );
 
@@ -291,9 +292,7 @@ router.get("/thank-you", protect, async (req, res) => {
         species: row.species,
         ownerName: row.owner_name,
         ownerPhone: row.owner_phone,
-        dueDate: row.updated_at
-          ? new Date(row.updated_at).toISOString().split("T")[0]
-          : "",
+        dueDate: row.due_date,
       });
     });
 
@@ -301,10 +300,14 @@ router.get("/thank-you", protect, async (req, res) => {
 
   } catch (err) {
     console.error("THANK YOU ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch thank you messages" });
+
+    res.status(500).json({
+      message: "Failed to fetch thank you list",
+      error: err.message,
+    });
   }
 });
-
+    
 
 // ---------------------
 // SEND WHATSAPP (LOG)
