@@ -8,7 +8,7 @@ const { protect } = require("../middleware/auth");
 // ---------------------
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, phone, email, address } = req.body;
+    const { name, phone, email, address, new_owner } = req.body;
 
     if (!name || !phone) {
       return res.status(400).json({ message: "Name and phone required" });
@@ -26,10 +26,10 @@ router.post("/", protect, async (req, res) => {
 
     // ➕ Create owner
     const result = await pool.query(
-      `INSERT INTO owners (name, phone, email, address, user_id)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO owners (name, phone, email, address, user_id, new_owner)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [name, phone, email, address, req.user.id]
+      [name, phone, email, address, req.user.id, new_owner || false]
     );
 
     res.status(201).json(result.rows[0]);
