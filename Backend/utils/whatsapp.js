@@ -2,86 +2,115 @@ const MESSAGE_TEMPLATES = require("./messageTemplates");
 
 const safe = (val, fallback) => (val ? val : fallback);
 
-// 🎯 Map message type → category
+// ---------------------
+// 🎯 Map messageType → category key in MESSAGE_TEMPLATES
+// ---------------------
 const TYPE_MAP = {
-  reminder: "REMINDER",
-  birthday: "BIRTHDAY",
-  new_owner: "NEW_OWNER",
-  loyalty: "LOYALTY",
-  thankyou: "THANK_YOU",
-  missed: "MISSED",
+  reminder:     "REMINDER",
+  birthday:     "BIRTHDAY",
+  new_owner:    "NEW_OWNER",
+  special:      "NEW_OWNER",   // special uses new_owner templates
+  thankyou:     "THANK_YOU",
+  three_months: "THREE_MONTHS",
+  missed:       "MISSED",
 };
 
-// 🎯 Default styles
-const DEFAULT_STYLE = {
-  REMINDER: "SIMPLE",
-};
-
-// 🎯 Get random template from array
+// ---------------------
+// 🎯 Pick random from array
+// ---------------------
 const pickRandom = (arr) => {
   if (!arr || arr.length === 0) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 };
 
-function buildWhatsAppMessage(messageType = "reminder", data = {}, style = null) {
-  const category = TYPE_MAP[messageType] || "REMINDER";
+// ---------------------
+// 🎯 Find template by ID across all categories
+// ---------------------
+const findById = (templateId) => {
+  const allTemplates = [
+    ...(MESSAGE_TEMPLATES.REMINDER     || []),
+    ...(MESSAGE_TEMPLATES.BIRTHDAY     || []),
+    ...(MESSAGE_TEMPLATES.NEW_OWNER    || []),
+    ...(MESSAGE_TEMPLATES.THANK_YOU    || []),
+    ...(MESSAGE_TEMPLATES.THREE_MONTHS || []),
+    ...(MESSAGE_TEMPLATES.MISSED       || []),
+  ];
+  return allTemplates.find((t) => t.id === templateId) || null;
+};
 
-  let template;
+// ---------------------
+// 🎯 MAIN FUNCTION
+// ---------------------
+function buildWhatsAppMessage(messageType = "reminder", data = {}, styleId = null) {
+  let template = null;
 
-  // ---------------------
-  // 🧠 HANDLE REMINDER (nested)
-  // ---------------------
-  if (category === "REMINDER") {
-    const selectedStyle = style || DEFAULT_STYLE.REMINDER;
+  // If a specific template ID is passed, use it directly
+  if (styleId) {
+    template = findById(styleId);
+  }
 
-    const templates =
-      MESSAGE_TEMPLATES.REMINDER[selectedStyle] ||
-      MESSAGE_TEMPLATES.REMINDER.SIMPLE;
-
-    template = pickRandom(templates);
-  } else {
-    // ---------------------
-    // 🧠 HANDLE OTHER TYPES (array)
-    // ---------------------
+  // Otherwise pick randomly from the category
+  if (!template) {
+    const category = TYPE_MAP[messageType] || "REMINDER";
     const templates = MESSAGE_TEMPLATES[category];
-
     template = pickRandom(templates);
   }
 
-  // fallback safety
+  // Final fallback
   if (!template) {
     return "Message template not found.";
   }
 
   // ---------------------
-  // 🧠 Sender logic
+  // 🧠 Sender name
   // ---------------------
   const senderName =
     data.accountType === "clinic"
-      ? safe(data.clinicName, "")
-      : `Dr. ${safe(data.doctorName || data.name, "")}`;
+      ? safe(data.clinicName, "Your Clinic")
+      : `Dr. ${safe(data.doctorName || data.name, "Doctor")}`;
 
   // ---------------------
-  // 🧠 Activity type
+  // 🧠 Activity type label
   // ---------------------
+  const activityTypeRaw = String(data.activityType || data.type || "").toLowerCase();
   const activityType =
-    String(data.activityType || "").toLowerCase() === "deworming"
+    activityTypeRaw === "deworming"
       ? "Deworming"
-      : "Vaccination";
+      : activityTypeRaw === "vaccine" || activityTypeRaw === "vaccination"
+      ? "Vaccination"
+      : safe(data.activityType, "Vaccination");
 
   // ---------------------
-  // 🧠 Replacements
+  // 🧠 Day name from dueDate
+  // ---------------------
+  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  let dayName = "";
+  if (data.dueDate) {
+    try {
+      dayName = DAY_NAMES[new Date(data.dueDate).getDay()];
+    } catch (e) {
+      dayName = "";
+    }
+  }
+
+  // ---------------------
+  // 🧠 All replacements
   // ---------------------
   const replacements = {
-    ownerName: safe(data.ownerName, "Pet Owner"),
-    petName: safe(data.petName, "your pet"),
-    petEmoji: safe(data.petEmoji, "🐾"),
-    dueDate: safe(data.dueDate, ""),
-    contact: safe(data.contact, ""),
-    senderName,
+    ownerName:    safe(data.ownerName,  "Pet Owner"),
+    petName:      safe(data.petName,    "your pet"),
+    petEmoji:     safe(data.petEmoji,   "🐾"),
+    dueDate:      safe(data.dueDate,    ""),
+    dayName,
     activityType,
+    stage:        safe(data.stage,      ""),
+    contact:      safe(data.contact,    ""),
+    senderName,
   };
 
+  // ---------------------
+  // 🧠 Replace all {{placeholders}}
+  // ---------------------
   let message = template.body;
 
   Object.keys(replacements).forEach((key) => {
@@ -94,6 +123,4 @@ function buildWhatsAppMessage(messageType = "reminder", data = {}, style = null)
   return message;
 }
 
-module.exports = {
-  buildWhatsAppMessage,
-};
+module.exports = { buildWhatsAppMessage };
