@@ -39,6 +39,7 @@ app.get("/", (req, res) => {
 const authRoutes         = require("./routes/auth");
 const profileRoutes      = require("./routes/profile");
 const animalRoutes       = require("./routes/animals");
+const animalScheduleRoutes = require("./routes/animalSchedule");
 const ownerRoutes        = require("./routes/owners");
 const notificationRoutes = require("./routes/notifications");
 const whatsappRoutes     = require("./routes/whatsapp");
@@ -49,9 +50,11 @@ const templateRoutes     = require("./routes/template");
 const reportRoutes       = require("./routes/report");
 
 
+
 app.use("/",           authRoutes);          // POST /signup, /api/send-otp, /api/verify-otp
 app.use("/api/profile",       profileRoutes);
 app.use("/api/animals",       animalRoutes);
+app.use("/api/animal-schedule", animalScheduleRoutes);
 app.use("/api/owners",        ownerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/notify",        whatsappRoutes);
