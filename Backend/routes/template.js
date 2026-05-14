@@ -54,39 +54,87 @@ router.put("/", protect, async (req, res) => {
 
     // Dog vaccines
     for (const row of scheduleTemplate.dog?.vaccine || []) {
-      await pool.query(
-        `INSERT INTO dog_vaccines (user_id, stage, "interval", vaccine_name)
-         VALUES ($1, $2, $3, $4)`,
-        [userId, row.stage || null, row.interval || 0, row.vaccineName || null]
-      );
-    }
+
+  // Skip empty rows
+  if (
+    !row.stage &&
+    !row.interval &&
+    !row.vaccineName
+  ) continue;
+
+  await pool.query(
+    `INSERT INTO dog_vaccines (user_id, stage, "interval", vaccine_name)
+     VALUES ($1, $2, $3, $4)`,
+    [
+      userId,
+      row.stage || null,
+      row.interval || null,
+      row.vaccineName || null,
+    ]
+  );
+}
 
     // Dog deworming
     for (const row of scheduleTemplate.dog?.deworming || []) {
-      await pool.query(
-        `INSERT INTO dog_deworming (user_id, "interval", deworming_name)
-         VALUES ($1, $2, $3)`,
-        [userId, row.interval || 0, row.dewormingName || null]
-      );
-    }
+
+  // Skip empty rows
+  if (
+    !row.interval &&
+    !row.dewormingName
+  ) continue;
+
+  await pool.query(
+    `INSERT INTO dog_deworming (user_id, "interval", deworming_name)
+     VALUES ($1, $2, $3)`,
+    [
+      userId,
+      row.interval || null,
+      row.dewormingName || null,
+    ]
+  );
+}
 
     // Cat vaccines
     for (const row of scheduleTemplate.cat?.vaccine || []) {
-      await pool.query(
-        `INSERT INTO cat_vaccines (user_id, stage, "interval", vaccine_name)
-         VALUES ($1, $2, $3, $4)`,
-        [userId, row.stage || null, row.interval || 0, row.vaccineName || null]
-      );
-    }
+
+  // Skip empty rows
+  if (
+    !row.stage &&
+    !row.interval &&
+    !row.vaccineName
+  ) continue;
+
+  await pool.query(
+    `INSERT INTO cat_vaccines (user_id, stage, "interval", vaccine_name)
+     VALUES ($1, $2, $3, $4)`,
+    [
+      userId,
+      row.stage || null,
+      row.interval || null,
+      row.vaccineName || null,
+    ]
+  );
+}
 
     // Cat deworming
     for (const row of scheduleTemplate.cat?.deworming || []) {
-      await pool.query(
-        `INSERT INTO cat_deworming (user_id, "interval", deworming_name)
-         VALUES ($1, $2, $3)`,
-        [userId, row.interval || 0, row.dewormingName || null]
-      );
-    }
+
+  // Skip empty rows
+  if (
+    !row.interval &&
+    !row.dewormingName
+  ) continue;
+
+  await pool.query(
+    `INSERT INTO cat_deworming (user_id, "interval", deworming_name)
+     VALUES ($1, $2, $3)`,
+    [
+      userId,
+      row.interval || null,
+      row.dewormingName || null,
+    ]
+  );
+}
 
     res.json({ success: true, message: "Template saved" });
 
