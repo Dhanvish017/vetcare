@@ -225,9 +225,10 @@ if (!template) {
     res.json({ message });
 
   } catch (err) {
-    console.error("BUILD MESSAGE ERROR:", err);
-    res.status(500).json({ message: "Failed to build message" });
-  }
+  console.error("BUILD MESSAGE ERROR:", err.message); // ← shows exact column error
+  res.status(500).json({ message: err.message });     // ← sends it to frontend too
+}
+  
 });
 
 module.exports = router;
