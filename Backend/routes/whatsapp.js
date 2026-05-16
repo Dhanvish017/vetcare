@@ -143,11 +143,47 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
     const category        = TYPE_TO_CATEGORY[messageType] || "REMINDER";
 
     // Find template: use saved preference → fallback to random
-    let template = null;
-    const savedId = savedSelections[categoryKey];
-    if (savedId) template = findById(savedId);
-    if (!template) template = pickRandom(messageTemplates[category]);
-    if (!template) return res.status(404).json({ message: "No template found" });
+    // ---------------------
+// FIND TEMPLATE
+// ---------------------
+let template = null;
+
+const savedId = savedSelections[categoryKey];
+
+// Try saved template first
+if (savedId) {
+  template = findById(savedId);
+}
+
+// ---------------------
+// FALLBACK
+// ---------------------
+if (!template) {
+
+  // REMINDER → nested object
+  if (category === "REMINDER") {
+
+    const style = "SIMPLE";
+
+    const templates =
+      messageTemplates.REMINDER[style] ||
+      messageTemplates.REMINDER.SIMPLE;
+
+    template = pickRandom(templates);
+
+  } else {
+
+    // Other categories → normal array
+    template = pickRandom(messageTemplates[category]);
+  }
+}
+
+// Final safety
+if (!template) {
+  return res.status(404).json({
+    message: "No template found",
+  });
+}
 
     // Sender name
     const senderName =
