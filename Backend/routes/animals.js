@@ -16,8 +16,8 @@ router.post("/", protect, async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO animals 
-       (user_id, owner_id, name, species, breed, age, gender)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       (user_id, owner_id, name, species, breed, age, gender,dob)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
       [
         req.user.id,
@@ -27,6 +27,7 @@ router.post("/", protect, async (req, res) => {
         breed,
         age,
         gender,
+        dob || null,
       ]
     );
 
