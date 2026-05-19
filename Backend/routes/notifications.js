@@ -262,22 +262,36 @@ router.get("/special", protect, async (req, res) => {
       });
     });
 
-    // 3️⃣ THREE MONTHS — last reminder log was 90+ days ago OR never messaged
+// 3️⃣ THREE MONTHS CHECK-IN
+    // Show if:
+    //   A) Never sent any reminder AND owner was created 90+ days ago
+    //   B) Last reminder was sent 90+ days ago (repeat every 3 months)
     const threeMonthsRes = await pool.query(
-      `SELECT DISTINCT ON (a.id)
-              a.id AS animal_id, a.name AS animal_name, a.species,
-              o.id AS owner_id, o.name AS owner_name, o.phone AS owner_phone,
+      `SELECT
+              a.id         AS animal_id,
+              a.name       AS animal_name,
+              a.species,
+              o.id         AS owner_id,
+              o.name       AS owner_name,
+              o.phone      AS owner_phone,
+              o.created_at AS owner_created_at,
               MAX(rl.created_at) AS last_contact
        FROM animals a
        JOIN owners o ON a.owner_id = o.id
-       LEFT JOIN reminder_logs rl ON rl.animal_id = a.id AND rl.user_id = $1
+       LEFT JOIN reminder_logs rl
+              ON rl.animal_id = a.id
+             AND rl.user_id   = $1
        WHERE a.user_id = $1
-       GROUP BY a.id, a.name, a.species, o.id, o.name, o.phone
-       HAVING MAX(rl.created_at) < NOW() - INTERVAL '90 days'
-           OR MAX(rl.created_at) IS NULL`,
+       GROUP BY a.id, a.name, a.species, o.id, o.name, o.phone, o.created_at
+       HAVING
+         -- Case A: Never contacted AND owner added 90+ days ago
+         (MAX(rl.created_at) IS NULL AND o.created_at < NOW() - INTERVAL '90 days')
+         OR
+         -- Case B: Last contact was 90+ days ago
+         (MAX(rl.created_at) < NOW() - INTERVAL '90 days')`,
       [req.user.id]
     );
-
+ 
     threeMonthsRes.rows.forEach((row) => {
       special.push({
         _id:         `three-months-${row.animal_id}`,
@@ -293,7 +307,7 @@ router.get("/special", protect, async (req, res) => {
         dueDate:     today.toISOString().split("T")[0],
         label:       row.last_contact
           ? `📅 Last contact: ${new Date(row.last_contact).toLocaleDateString()}`
-          : "📅 Never contacted",
+          : `📅 Owner since: ${new Date(row.owner_created_at).toLocaleDateString()}`,
       });
     });
 
