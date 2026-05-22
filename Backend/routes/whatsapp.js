@@ -162,7 +162,18 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
 // ---------------------
 let template = null;
 
-const savedId = savedSelections[categoryKey];
+const DEFAULT_TEMPLATE = {
+  reminder: "SIMPLE",
+  birthday: "BIRTHDAY_WARM",
+  new_owner: "NEW_WARM",
+  thankyou: "THANK_SIMPLE",
+  three_months: "THREE_MONTHS_WARM",
+  missed: "MISSED_CARING",
+};
+
+const savedId =
+  savedSelections[categoryKey] ||
+  DEFAULT_TEMPLATE[categoryKey];
 
 // Try saved template first
 if (savedId) {
