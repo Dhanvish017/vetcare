@@ -16,9 +16,10 @@ const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","
 
 const findById = (templateId) => {
 
+  // Flatten REMINDER templates
   const reminderTemplates = Object.values(
     messageTemplates.REMINDER || {}
-  ).flat();
+  ).flatMap((arr) => arr);
 
   const all = [
     ...reminderTemplates,
@@ -29,7 +30,7 @@ const findById = (templateId) => {
     ...(messageTemplates.MISSED || []),
   ];
 
-  return all.find((t) => t.id === templateId) || null;
+  return all.find((t) => t.id === templateId);
 };
 
 const TYPE_TO_CATEGORY = {
