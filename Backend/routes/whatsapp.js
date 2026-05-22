@@ -235,6 +235,8 @@ if (!template) {
       .replace(/{{contact}}/g,      user.phone           || "")
       .replace(/{{senderName}}/g,   senderName);
 
+      console.log("FINAL MESSAGE:", message);
+
     res.json({ message });
 
   } catch (err) {
