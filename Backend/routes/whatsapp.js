@@ -134,7 +134,14 @@ router.get("/templates", protect, (req, res) => {
 // ---------------------
 router.post("/build-whatsapp-message", protect, async (req, res) => {
   try {
+
+    console.log("========== BUILD MESSAGE ==========");
+    console.log("BODY:", req.body);
+
     const { reminder, messageType } = req.body;
+
+    console.log("MESSAGE TYPE:", messageType);
+    console.log("REMINDER:", reminder);
 
     // Fetch user with template selections
     const result = await pool.query(
@@ -231,6 +238,14 @@ if (!template) {
     res.json({ message });
 
   } catch (err) {
+
+     console.error("========== BACKEND ERROR ==========");
+
+    console.error("MESSAGE:", err.message);
+
+    console.error("STACK:", err.stack);
+
+    console.error("FULL:", err);
   console.error("BUILD MESSAGE ERROR:", err.message); // ← shows exact column error
   res.status(500).json({ message: err.message });     // ← sends it to frontend too
 }
