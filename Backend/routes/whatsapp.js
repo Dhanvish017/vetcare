@@ -15,14 +15,20 @@ const pickRandom = (arr) => {
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 const findById = (templateId) => {
+
+  const reminderTemplates = Object.values(
+    messageTemplates.REMINDER || {}
+  ).flat();
+
   const all = [
-    ...(messageTemplates.REMINDER     || []),
-    ...(messageTemplates.BIRTHDAY     || []),
-    ...(messageTemplates.NEW_OWNER    || []),
-    ...(messageTemplates.THANK_YOU    || []),
+    ...reminderTemplates,
+    ...(messageTemplates.BIRTHDAY || []),
+    ...(messageTemplates.NEW_OWNER || []),
+    ...(messageTemplates.THANK_YOU || []),
     ...(messageTemplates.THREE_MONTHS || []),
-    ...(messageTemplates.MISSED       || []),
+    ...(messageTemplates.MISSED || []),
   ];
+
   return all.find((t) => t.id === templateId) || null;
 };
 
