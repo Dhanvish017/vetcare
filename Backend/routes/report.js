@@ -57,7 +57,7 @@ router.get("/", protect, async (req, res) => {
         query += ` AND vs.due_date >= CURRENT_DATE - INTERVAL '${daysNum} days'`;
       }
       if (search.trim()) {
-        query += ` AND LOWER(a.name) LIKE $${idx}`;
+        query += ` AND (LOWER(a.name) LIKE $${idx} OR LOWER(vs.vaccine_name) LIKE $${idx})`;
         values.push(`%${search.toLowerCase()}%`);
         idx++;
       }
@@ -91,7 +91,7 @@ router.get("/", protect, async (req, res) => {
         query += ` AND ds.due_date >= CURRENT_DATE - INTERVAL '${daysNum} days'`;
       }
       if (search.trim()) {
-        query += ` AND LOWER(a.name) LIKE $${idx}`;
+        query += ` AND (LOWER(a.name) LIKE $${idx} OR LOWER(ds.deworming_name) LIKE $${idx})`;
         values.push(`%${search.toLowerCase()}%`);
         idx++;
       }
