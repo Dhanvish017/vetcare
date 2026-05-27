@@ -3,9 +3,6 @@ const router  = express.Router();
 const pool    = require("../config/db");
 const { protect } = require("../middleware/auth");
 
-// ─────────────────────────────
-// GET /api/report
-// ─────────────────────────────
 router.get("/", protect, async (req, res) => {
   try {
     const {
@@ -14,13 +11,14 @@ router.get("/", protect, async (req, res) => {
       search    = "",
       sortField = "date",
       order     = "desc",
+      startDate = "",
+      endDate   = "",
     } = req.query;
 
     const userId    = req.user.id;
     const daysNum   = parseInt(days) || 0;
     const sortOrder = order === "asc" ? "ASC" : "DESC";
 
-    // Safe sort field mapping
     const fieldMap = {
       petName:   "a.name",
       ownerName: "o.name",
@@ -34,30 +32,38 @@ router.get("/", protect, async (req, res) => {
 
     if (category === "vaccine") {
       let query = `
-        SELECT
-          vs.id,
-          a.name        AS pet_name,
-          a.species,
-          o.name        AS owner_name,
-          vs.vaccine_name AS type,
-          vs.stage,
-          vs.due_date   AS date,
-          vs.status
+        SELECT vs.id, a.name AS pet_name, a.species,
+               o.name AS owner_name, vs.vaccine_name AS type,
+               vs.stage, vs.due_date AS date, vs.status
         FROM vaccine_schedule vs
         JOIN animals a ON vs.animal_id = a.id
         JOIN owners  o ON a.owner_id   = o.id
         WHERE a.user_id = $1
-          AND vs.vaccine_name IS NOT NULL
-          AND vs.vaccine_name != ''
+          AND vs.vaccine_name IS NOT NULL AND vs.vaccine_name != ''
       `;
       const values = [userId];
       let idx = 2;
 
-      if (daysNum > 0) {
+      // Days filter (only if no custom date range)
+      if (!startDate && !endDate && daysNum > 0) {
         query += ` AND vs.due_date >= CURRENT_DATE - INTERVAL '${daysNum} days'`;
       }
+
+      // Custom date range
+      if (startDate) {
+        query += ` AND vs.due_date >= $${idx}`; values.push(startDate); idx++;
+      }
+      if (endDate) {
+        query += ` AND vs.due_date <= $${idx}`; values.push(endDate); idx++;
+      }
+
+      // Search — pet name, owner name, OR vaccine name
       if (search.trim()) {
-        query += ` AND (LOWER(a.name) LIKE $${idx} OR LOWER(vs.vaccine_name) LIKE $${idx})`;
+        query += ` AND (
+          LOWER(a.name)           LIKE $${idx} OR
+          LOWER(o.name)           LIKE $${idx} OR
+          LOWER(vs.vaccine_name)  LIKE $${idx}
+        )`;
         values.push(`%${search.toLowerCase()}%`);
         idx++;
       }
@@ -67,31 +73,34 @@ router.get("/", protect, async (req, res) => {
       rows = result.rows;
 
     } else {
-      // deworming
       let query = `
-        SELECT
-          ds.id,
-          a.name           AS pet_name,
-          a.species,
-          o.name           AS owner_name,
-          ds.deworming_name AS type,
-          ds.due_date      AS date,
-          ds.status
+        SELECT ds.id, a.name AS pet_name, a.species,
+               o.name AS owner_name, ds.deworming_name AS type,
+               ds.due_date AS date, ds.status
         FROM deworming_schedule ds
         JOIN animals a ON ds.animal_id = a.id
         JOIN owners  o ON a.owner_id   = o.id
         WHERE a.user_id = $1
-          AND ds.deworming_name IS NOT NULL
-          AND ds.deworming_name != ''
+          AND ds.deworming_name IS NOT NULL AND ds.deworming_name != ''
       `;
       const values = [userId];
       let idx = 2;
 
-      if (daysNum > 0) {
+      if (!startDate && !endDate && daysNum > 0) {
         query += ` AND ds.due_date >= CURRENT_DATE - INTERVAL '${daysNum} days'`;
       }
+      if (startDate) {
+        query += ` AND ds.due_date >= $${idx}`; values.push(startDate); idx++;
+      }
+      if (endDate) {
+        query += ` AND ds.due_date <= $${idx}`; values.push(endDate); idx++;
+      }
       if (search.trim()) {
-        query += ` AND (LOWER(a.name) LIKE $${idx} OR LOWER(ds.deworming_name) LIKE $${idx})`;
+        query += ` AND (
+          LOWER(a.name)              LIKE $${idx} OR
+          LOWER(o.name)              LIKE $${idx} OR
+          LOWER(ds.deworming_name)   LIKE $${idx}
+        )`;
         values.push(`%${search.toLowerCase()}%`);
         idx++;
       }
@@ -101,12 +110,10 @@ router.get("/", protect, async (req, res) => {
       rows = result.rows;
     }
 
-    // Stats
     const total     = rows.length;
     const pending   = rows.filter(r => r.status === "pending").length;
     const completed = rows.filter(r => r.status === "completed").length;
 
-    // Format for frontend
     const data = rows.map(r => ({
       id:        r.id,
       petName:   r.pet_name,
