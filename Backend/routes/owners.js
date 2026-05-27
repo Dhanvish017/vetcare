@@ -153,8 +153,8 @@ router.get("/:ownerId/reports", protect, async (req, res) => {
     res.json({ notificationsReceived, notificationsMissed, clinicVisits });
 
   } catch (err) {
-    console.error("REPORT ERROR:", err);
-    res.status(500).json({ message: "Failed to generate report" });
+  console.error("FETCH OWNERS ERROR:", err.message);
+  res.status(500).json({ message: err.message }); 
   }
 });
 
