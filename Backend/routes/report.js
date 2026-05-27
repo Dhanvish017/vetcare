@@ -32,7 +32,7 @@ router.get("/", protect, async (req, res) => {
 
     if (category === "vaccine") {
       let query = `
-        SELECT vs.id, a.name AS pet_name, a.species,
+        SELECT vs.id, a.id AS animal_id, a.name AS pet_name, a.species,
                o.name AS owner_name, vs.vaccine_name AS type,
                vs.stage, vs.due_date AS date, vs.status
         FROM vaccine_schedule vs
@@ -74,7 +74,7 @@ router.get("/", protect, async (req, res) => {
 
     } else {
       let query = `
-        SELECT ds.id, a.name AS pet_name, a.species,
+        SELECT ds.id, a.id AS animal_id, a.name AS pet_name, a.species,
                o.name AS owner_name, ds.deworming_name AS type,
                ds.due_date AS date, ds.status
         FROM deworming_schedule ds
@@ -116,6 +116,7 @@ router.get("/", protect, async (req, res) => {
 
     const data = rows.map(r => ({
       id:        r.id,
+      animalId:  r.animal_id,
       petName:   r.pet_name,
       ownerName: r.owner_name,
       species:   r.species,
