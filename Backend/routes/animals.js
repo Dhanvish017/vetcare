@@ -8,7 +8,14 @@ const { protect } = require("../middleware/auth");
 // ---------------------
 router.post("/", protect, async (req, res) => {
   try {
+    console.log("ANIMAL BODY:", req.body);
     const { owner_id, name, species, breed, age, gender, dob } = req.body;
+
+    console.log("CHECK:", {
+      owner_id,
+      name,
+      species,
+    });
 
     if (!owner_id || !name || !species) {
       return res.status(400).json({ message: "Missing required fields" });

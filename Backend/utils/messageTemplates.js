@@ -27,7 +27,7 @@ module.exports = {
     {
       id: "PRICE",
       label: "Price Sensitive 💰",
-      body: `Vaccination is one of the most cost-effective ways to protect your pet *{{petName}}*.\n\nNext due: *{{activityType}}* on *{{dayName}} {{dueDate}}* 👍\n\n— *{{senderName}}*`,
+      body: `*{{activityType}}* is one of the most cost-effective ways to protect your pet *{{petName}}*.\n\nNext due: *{{activityType}}* on *{{dayName}} {{dueDate}}* 👍\n\n— *{{senderName}}*`,
     },
     {
       id: "OWNER",
@@ -137,7 +137,7 @@ module.exports = {
     {
       id: "MISSED_FRIENDLY",
       label: "Friendly Follow-up 😊",
-      body: `Hey 👋 busy ಆಗಿದಿರಿ ಅಂತ ಗೊತ್ತು 😊 it's absolutely understandable.\n\n*{{petName}}* vaccination miss ಆಗಿದೆ 🐾 No tension — ನಾವು adjust ಮಾಡ್ತೀವಿ 👍\n\n— *{{senderName}}*`,
+      body: `Hey 👋 busy ಆಗಿದಿರಿ ಅಂತ ಗೊತ್ತು 😊 it's absolutely understandable.\n\n*{{petName}}* activity miss ಆಗಿದೆ 🐾 No tension — ನಾವು adjust ಮಾಡ್ತೀವಿ 👍\n\n— *{{senderName}}*`,
     },
   ],
 };
