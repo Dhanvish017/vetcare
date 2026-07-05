@@ -1,15 +1,17 @@
-// src/Backend/middleware/auth.js
-
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY  // use SERVICE ROLE key, not anon key
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ✅ ADD THIS — confirms new code is deployed
+console.log('🚀 NEW auth.js loaded');
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ SET' : '❌ MISSING');
+console.log('SERVICE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ MISSING');
 
 const protect = async (req, res, next) => {
   try {
-    // Get token from header
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -18,18 +20,18 @@ const protect = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    // ✅ Verify using Supabase instead of jsonwebtoken
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
+      console.log('❌ Token failed:', error?.message);
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
 
-    // Attach user to request
+    console.log('✅ Token valid:', user.email);
     req.user = user;
     req.userId = user.id;
-
     next();
+
   } catch (err) {
     console.error('Auth middleware error:', err.message);
     return res.status(401).json({ message: 'Authentication failed' });
