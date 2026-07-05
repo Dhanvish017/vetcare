@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 // ---------------------
 // ROUTES
 // ---------------------
-const authRoutes         = require("./routes/auth");
+//const authRoutes         = require("./routes/auth");
 const profileRoutes      = require("./routes/profile");
 const animalRoutes       = require("./routes/animals");
 const animalScheduleRoutes = require("./routes/animalSchedule");
@@ -52,7 +52,7 @@ const reportRoutes       = require("./routes/report");
 
 
 
-app.use("/",           authRoutes);          // POST /signup, /api/send-otp, /api/verify-otp
+//app.use("/",           authRoutes);          // POST /signup, /api/send-otp, /api/verify-otp
 app.use("/api/profile",       profileRoutes);
 app.use("/api/animals",       animalRoutes);
 app.use("/api/animal-schedule", animalScheduleRoutes);
