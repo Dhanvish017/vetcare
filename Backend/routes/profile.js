@@ -10,16 +10,26 @@ router.put("/", protect, async (req, res) => {
   try {
     const { name, email, address, clinicName, accountType } = req.body;
 
-    // 🔍 Check user
-    const userRes = await pool.query(
-      "SELECT * FROM users WHERE id = $1",
-      [req.user.id]
+    // ✅ Use email from Supabase user object
+    const supabaseEmail = req.user.email;
+
+    // 🔍 Check if user exists
+    let userRes = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [supabaseEmail]
     );
 
-    const user = userRes.rows[0];
+    let user = userRes.rows[0];
 
+    // ➕ Create user if doesn't exist (first time Google/email login)
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      const newUser = await pool.query(
+        `INSERT INTO users (email, is_profile_complete)
+         VALUES ($1, false)
+         RETURNING *`,
+        [supabaseEmail]
+      );
+      user = newUser.rows[0];
     }
 
     // 🔄 Update user
@@ -36,9 +46,9 @@ router.put("/", protect, async (req, res) => {
         END,
         is_profile_complete = TRUE,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $6
+      WHERE email = $6
       RETURNING *`,
-      [name, email, address, accountType, clinicName, req.user.id]
+      [name, email, address, accountType, clinicName, supabaseEmail]
     );
 
     const updatedUser = updated.rows[0];
@@ -69,19 +79,29 @@ router.put("/", protect, async (req, res) => {
 // ---------------------
 router.get("/", protect, async (req, res) => {
   try {
-    const result = await pool.query(
+    // ✅ Use email from Supabase user object
+    const supabaseEmail = req.user.email;
+
+    let result = await pool.query(
       `SELECT id, phone, name, email, address,
               account_type, clinic_name,
               is_profile_complete, role
        FROM users
-       WHERE id = $1`,
-      [req.user.id]
+       WHERE email = $1`,
+      [supabaseEmail]
     );
 
-    const user = result.rows[0];
+    let user = result.rows[0];
 
+    // ➕ Auto-create user row if first time login
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      const newUser = await pool.query(
+        `INSERT INTO users (email, is_profile_complete)
+         VALUES ($1, false)
+         RETURNING *`,
+        [supabaseEmail]
+      );
+      user = newUser.rows[0];
     }
 
     res.json({
