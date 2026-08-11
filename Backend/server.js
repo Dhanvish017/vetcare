@@ -49,6 +49,7 @@ const dashboardRoutes    = require("./routes/dashboard");
 const analyticRoutes     = require("./routes/analyticsRoutes"); // existing
 const templateRoutes     = require("./routes/template");
 const reportRoutes       = require("./routes/report");
+const whatsappAutomationRoutes = require("./whatsapp_automation.js/whatsapp.routes");
 
 
 
@@ -64,6 +65,7 @@ app.use("/api/dashboard",     dashboardRoutes);
 app.use("/api/analytics",     analyticRoutes);    // existing analytics routes (keep as-is)
 app.use("/api/template",      templateRoutes);
 app.use("/api/report",        reportRoutes);
+app.use("/api/whatsapp",      whatsappAutomationRoutes);
 
 
 const pool = require("./config/db");
