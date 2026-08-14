@@ -9,7 +9,15 @@ const app = express();
 // ---------------------
 // MIDDLEWARE
 // ---------------------
-app.use(express.json());
+app.use(
+  express.json({
+    // Keeps the raw bytes around so the WhatsApp webhook can verify
+    // Meta's X-Hub-Signature-256 header against the exact payload sent.
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
