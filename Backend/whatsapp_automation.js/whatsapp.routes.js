@@ -3,6 +3,9 @@ const router = express.Router();
 const { protect } = require("../middleware/auth");
 const whatsappController = require("./whatsapp.controller");
 
+// TEMP: proves this exact file was required at boot — check Render logs for this line
+console.log("WhatsApp webhook routes loaded");
+
 // ---------------------
 // GET /api/whatsapp/status
 // ---------------------
