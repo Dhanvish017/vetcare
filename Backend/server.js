@@ -58,6 +58,7 @@ const analyticRoutes     = require("./routes/analyticsRoutes"); // existing
 const templateRoutes     = require("./routes/template");
 const reportRoutes       = require("./routes/report");
 const whatsappAutomationRoutes = require("./whatsapp_automation.js/whatsapp.routes");
+console.log("WHATSAPP ROUTES IMPORTED SUCCESSFULLY");
 
 
 
