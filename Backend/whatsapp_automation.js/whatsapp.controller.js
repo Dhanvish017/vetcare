@@ -79,7 +79,7 @@ const verifyWebhook = (req, res) => {
 // POST /api/whatsapp/webhook
 // Meta delivery/status events (sent, delivered, read, failed)
 // ---------------------
-const receiveWebhook = async (req, res) => {
+const handleWebhook = async (req, res) => {
   try {
     const signature = req.headers["x-hub-signature-256"];
     if (!whatsappService.verifySignature(req.rawBody, signature)) {
@@ -101,4 +101,4 @@ const receiveWebhook = async (req, res) => {
   }
 };
 
-module.exports = { getStatus, connect, callback, disconnect, verifyWebhook, receiveWebhook };
+module.exports = { getStatus, connect, callback, disconnect, verifyWebhook, handleWebhook };

@@ -29,6 +29,6 @@ router.post("/disconnect", protect, whatsappController.disconnect);
 // Called by Meta, not the frontend — no JWT available, so no `protect`
 // ---------------------
 router.get("/webhook", whatsappController.verifyWebhook);
-router.post("/webhook", whatsappController.receiveWebhook);
+router.post("/webhook", whatsappController.handleWebhook);
 
 module.exports = router;
