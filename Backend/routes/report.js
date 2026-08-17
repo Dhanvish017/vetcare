@@ -15,7 +15,7 @@ router.get("/", protect, async (req, res) => {
       endDate   = "",
     } = req.query;
 
-    const userId    = req.user.id;
+    const userId    = req.user.internalId;
     const daysNum   = parseInt(days) || 0;
     const sortOrder = order === "asc" ? "ASC" : "DESC";
 

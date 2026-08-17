@@ -11,7 +11,7 @@ const normalize = (date) => {
 
 router.get("/stats", protect, async (req, res) => {
   try {
-    const userId   = req.user.id;
+    const userId   = req.user.internalId;
     const today    = normalize(new Date());
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);

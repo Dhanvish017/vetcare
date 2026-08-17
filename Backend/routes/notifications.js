@@ -36,7 +36,7 @@ router.get("/", protect, async (req, res) => {
          AND vs.status = 'pending'
          AND vs.vaccine_name IS NOT NULL
          AND vs.vaccine_name != ''`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     vaccineRes.rows.forEach((row) => {
@@ -74,7 +74,7 @@ router.get("/", protect, async (req, res) => {
          AND ds.status = 'pending'
          AND ds.deworming_name IS NOT NULL
          AND ds.deworming_name != ''`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     dewormRes.rows.forEach((row) => {
@@ -128,7 +128,7 @@ router.get("/missed", protect, async (req, res) => {
          AND vs.vaccine_name IS NOT NULL
          AND vs.vaccine_name != ''
          AND vs.due_date < NOW() - INTERVAL '3 days'`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     vaccineRes.rows.forEach((row) => {
@@ -162,7 +162,7 @@ router.get("/missed", protect, async (req, res) => {
          AND ds.deworming_name IS NOT NULL
          AND ds.deworming_name != ''
          AND ds.due_date < NOW() - INTERVAL '3 days'`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     dewormRes.rows.forEach((row) => {
@@ -209,7 +209,7 @@ router.get("/special", protect, async (req, res) => {
        JOIN animals a ON a.owner_id = o.id
        WHERE a.user_id = $1
          AND o.new_owner = TRUE`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     newOwnerRes.rows.forEach((row) => {
@@ -239,7 +239,7 @@ router.get("/special", protect, async (req, res) => {
          AND a.dob IS NOT NULL
          AND EXTRACT(MONTH FROM a.dob) = EXTRACT(MONTH FROM CURRENT_DATE)
          AND EXTRACT(DAY   FROM a.dob) = EXTRACT(DAY   FROM CURRENT_DATE)`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     birthdayRes.rows.forEach((row) => {
@@ -289,7 +289,7 @@ router.get("/special", protect, async (req, res) => {
          OR
          -- Case B: Last contact was 90+ days ago
          (MAX(rl.created_at) < NOW() - INTERVAL '90 days')`,
-      [req.user.id]
+      [req.user.internalId]
     );
  
     threeMonthsRes.rows.forEach((row) => {
@@ -338,7 +338,7 @@ router.get("/thank-you", protect, async (req, res) => {
        WHERE a.user_id = $1
          AND vs.status = 'completed'
          AND DATE(vs.due_date) = CURRENT_DATE`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     vaccineRes.rows.forEach((row) => {
@@ -370,7 +370,7 @@ router.get("/thank-you", protect, async (req, res) => {
        WHERE a.user_id = $1
          AND ds.status = 'completed'
          AND DATE(ds.due_date) = CURRENT_DATE`,
-      [req.user.id]
+      [req.user.internalId]
     );
 
     dewormRes.rows.forEach((row) => {
@@ -408,7 +408,7 @@ router.post("/send-whatsapp/:animalId", protect, async (req, res) => {
     await pool.query(
       `INSERT INTO reminder_logs (user_id, animal_id, owner_id, type, reminder_window)
        VALUES ($1, $2, $3, $4, 'today')`,
-      [req.user.id, req.params.animalId, ownerId || null, type]
+      [req.user.internalId, req.params.animalId, ownerId || null, type]
     );
     res.json({ success: true });
   } catch (err) {
@@ -427,7 +427,7 @@ router.post("/send-followup/:animalId", protect, async (req, res) => {
     await pool.query(
       `INSERT INTO reminder_logs (user_id, animal_id, owner_id, type, reminder_window)
        VALUES ($1, $2, $3, $4, 'missed')`,
-      [req.user.id, req.params.animalId, ownerId || null, type]
+      [req.user.internalId, req.params.animalId, ownerId || null, type]
     );
     res.json({ success: true });
   } catch (err) {
@@ -447,14 +447,14 @@ router.post("/send-special/:animalId", protect, async (req, res) => {
     await pool.query(
       `INSERT INTO reminder_logs (user_id, animal_id, owner_id, type, reminder_window)
        VALUES ($1, $2, $3, $4, 'special')`,
-      [req.user.id, req.params.animalId, ownerId || null, specialType || "special"]
+      [req.user.internalId, req.params.animalId, ownerId || null, specialType || "special"]
     );
 
     // After sending new owner message, unset is_first_time flag
     if (specialType === "first_time" && ownerId) {
       await pool.query(
         `UPDATE owners SET new_owner = FALSE WHERE id = $1 AND user_id = $2`,
-        [ownerId, req.user.id]
+        [ownerId, req.user.internalId]
       );
     }
 

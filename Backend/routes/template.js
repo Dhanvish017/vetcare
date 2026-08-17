@@ -8,7 +8,7 @@ const { protect } = require("../middleware/auth");
 // ---------------------
 router.get("/", protect, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.internalId;
 
     const [dogVaccines, dogDeworming, catVaccines, catDeworming] = await Promise.all([
       pool.query('SELECT stage, "interval", vaccine_name   FROM dog_vaccines  WHERE user_id = $1 ORDER BY id', [userId]),
@@ -42,7 +42,7 @@ router.get("/", protect, async (req, res) => {
 router.put("/", protect, async (req, res) => {
   try {
     const { scheduleTemplate } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.internalId;
 
     // Clear old data for this user
     await Promise.all([

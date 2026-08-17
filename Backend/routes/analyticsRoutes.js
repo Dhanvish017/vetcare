@@ -5,7 +5,7 @@ const { protect } = require("../middleware/auth");
 
 router.get("/today", protect, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.internalId;
 
     // -------------------------
     // TODAY RANGE (IST)

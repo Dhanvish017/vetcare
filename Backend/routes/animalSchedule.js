@@ -10,7 +10,7 @@ const { protect } = require("../middleware/auth");
 router.get("/:animalId", protect, async (req, res) => {
   try {
     const animalId = req.params.animalId;
-    const userId   = req.user.id;
+    const userId   = req.user.internalId;
 
     // Verify animal belongs to this user
     const animalResult = await pool.query(
@@ -137,7 +137,7 @@ router.put("/:animalId", protect, async (req, res) => {
 router.delete("/:animalId", protect, async (req, res) => {
   try {
     const animalId = req.params.animalId;
-    const userId   = req.user.id;
+    const userId   = req.user.internalId;
 
     // Verify ownership
     const check = await pool.query(

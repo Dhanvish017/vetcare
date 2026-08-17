@@ -17,7 +17,7 @@ router.post("/", protect, async (req, res) => {
     // 🔍 Check if owner exists
     const existing = await pool.query(
       "SELECT * FROM owners WHERE phone = $1 AND user_id = $2",
-      [phone, req.user.id]
+      [phone, req.user.internalId]
     );
 
     if (existing.rows.length > 0) {
@@ -29,7 +29,7 @@ router.post("/", protect, async (req, res) => {
       `INSERT INTO owners (name, phone, email, address, user_id, new_owner)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [name, phone, email, address, req.user.id, new_owner || false]
+      [name, phone, email, address, req.user.internalId, new_owner || false]
     );
 
     res.status(201).json(result.rows[0]);
@@ -48,7 +48,7 @@ router.get("/", protect, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM owners WHERE user_id = $1",
-      [req.user.id]
+      [req.user.internalId]
     );
 
     res.json(result.rows);
@@ -70,7 +70,7 @@ router.get("/:id", protect, async (req, res) => {
     // 🔍 Get owner
     const ownerRes = await pool.query(
       "SELECT * FROM owners WHERE id = $1 AND user_id = $2",
-      [ownerId, req.user.id]
+      [ownerId, req.user.internalId]
     );
 
     const owner = ownerRes.rows[0];
@@ -82,7 +82,7 @@ router.get("/:id", protect, async (req, res) => {
     // 🔍 Get animals
     const animalRes = await pool.query(
       "SELECT * FROM animals WHERE owner_id = $1 AND user_id = $2",
-      [ownerId, req.user.id]
+      [ownerId, req.user.internalId]
     );
 
     res.json({
@@ -107,7 +107,7 @@ router.get("/:ownerId/reports", protect, async (req, res) => {
     // 🔍 Get animals
     const animalsRes = await pool.query(
       "SELECT id FROM animals WHERE owner_id = $1 AND user_id = $2",
-      [ownerId, req.user.id]
+      [ownerId, req.user.internalId]
     );
 
     const animalIds = animalsRes.rows.map(a => a.id);
@@ -142,7 +142,7 @@ router.get("/:ownerId/reports", protect, async (req, res) => {
     const visitRes = await pool.query(
       `SELECT vaccine_thank_you_sent, deworming_thank_you_sent
        FROM animals WHERE owner_id = $1 AND user_id = $2`,
-      [ownerId, req.user.id]
+      [ownerId, req.user.internalId]
     );
 
     visitRes.rows.forEach(a => {

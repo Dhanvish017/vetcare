@@ -72,7 +72,7 @@ router.post("/whatsapp-template", protect, async (req, res) => {
        SET whatsapp_templates = COALESCE(whatsapp_templates, '{}'::jsonb)
                                 || jsonb_build_object($1::text, $2::text)
        WHERE id = $3`,
-      [category || "reminder", templateId, req.user.id]
+      [category || "reminder", templateId, req.user.internalId]
     );
 
     res.json({ success: true });
@@ -91,7 +91,7 @@ router.get("/whatsapp-template", protect, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT whatsapp_templates FROM users WHERE id = $1",
-      [req.user.id]
+      [req.user.internalId]
     );
     const user = result.rows[0];
     res.json({ templateId: user?.whatsapp_templates || {} });
@@ -147,7 +147,7 @@ router.post("/build-whatsapp-message", protect, async (req, res) => {
     // Fetch user with template selections
     const result = await pool.query(
       "SELECT id, name, clinic_name, account_type, phone, whatsapp_templates FROM users WHERE id = $1",
-      [req.user.id]
+      [req.user.internalId]
     );
     const user = result.rows[0];
     if (!user) return res.status(404).json({ message: "User not found" });

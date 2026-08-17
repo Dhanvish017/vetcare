@@ -27,7 +27,7 @@ router.post("/", protect, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING *`,
       [
-        req.user.id,
+        req.user.internalId,
         owner_id,
         name,
         species.toLowerCase(),
@@ -54,7 +54,7 @@ router.get("/", protect, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM animals WHERE user_id = $1",
-      [req.user.id]
+      [req.user.internalId]
     );
 
     res.json(result.rows);
@@ -73,7 +73,7 @@ router.get("/:id", protect, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM animals WHERE id = $1 AND user_id = $2",
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.internalId]
     );
 
     const animal = result.rows[0];
@@ -209,7 +209,7 @@ router.delete("/:id", protect, async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM animals WHERE id = $1 AND user_id = $2 RETURNING *",
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.internalId]
     );
 
     if (result.rows.length === 0) {
