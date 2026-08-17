@@ -57,11 +57,12 @@ router.get("/", protect, async (req, res) => {
         query += ` AND vs.due_date <= $${idx}`; values.push(endDate); idx++;
       }
 
-      // Search — pet name, owner name, OR vaccine name
+      // Search — pet name, owner name, owner phone, OR vaccine name
       if (search.trim()) {
         query += ` AND (
           LOWER(a.name)           LIKE $${idx} OR
           LOWER(o.name)           LIKE $${idx} OR
+          LOWER(o.phone)          LIKE $${idx} OR
           LOWER(vs.vaccine_name)  LIKE $${idx}
         )`;
         values.push(`%${search.toLowerCase()}%`);
@@ -99,6 +100,7 @@ router.get("/", protect, async (req, res) => {
         query += ` AND (
           LOWER(a.name)              LIKE $${idx} OR
           LOWER(o.name)              LIKE $${idx} OR
+          LOWER(o.phone)             LIKE $${idx} OR
           LOWER(ds.deworming_name)   LIKE $${idx}
         )`;
         values.push(`%${search.toLowerCase()}%`);
