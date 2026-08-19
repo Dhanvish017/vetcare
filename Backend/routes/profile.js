@@ -1,36 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
-const { protect } = require("../middleware/auth");
+const { identify } = require("../middleware/auth");
 
 // ---------------------
 // CREATE / UPDATE USER PROFILE
+// `identify` (not `protect`) — a brand-new Supabase account has no
+// `users` row yet, and this is the one route allowed to create it.
+// `identify` already guarantees req.user.internalId exists by now.
 // ---------------------
-router.put("/", protect, async (req, res) => {
+router.put("/", identify, async (req, res) => {
   try {
     const { name, email, address, clinicName, accountType } = req.body;
-
-    // ✅ Use email from Supabase user object
-    const supabaseEmail = req.user.email;
-
-    // 🔍 Check if user exists
-    let userRes = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [supabaseEmail]
-    );
-
-    let user = userRes.rows[0];
-
-    // ➕ Create user if doesn't exist (first time Google/email login)
-    if (!user) {
-      const newUser = await pool.query(
-        `INSERT INTO users (email, is_profile_complete)
-         VALUES ($1, false)
-         RETURNING *`,
-        [supabaseEmail]
-      );
-      user = newUser.rows[0];
-    }
 
     // 🔄 Update user
     const updated = await pool.query(
@@ -39,16 +20,16 @@ router.put("/", protect, async (req, res) => {
         email = COALESCE($2, email),
         address = COALESCE($3, address),
         account_type = COALESCE($4, account_type),
-        clinic_name = CASE 
+        clinic_name = CASE
           WHEN $4 = 'clinic' THEN $5
           WHEN $4 = 'individual' THEN NULL
           ELSE clinic_name
         END,
         is_profile_complete = TRUE,
         updated_at = CURRENT_TIMESTAMP
-      WHERE email = $6
+      WHERE id = $6
       RETURNING *`,
-      [name, email, address, accountType, clinicName, supabaseEmail]
+      [name, email, address, accountType, clinicName, req.user.internalId]
     );
 
     const updatedUser = updated.rows[0];
@@ -76,33 +57,21 @@ router.put("/", protect, async (req, res) => {
 
 // ---------------------
 // FETCH USER PROFILE
+// `identify` already found-or-created the row and resolved
+// req.user.internalId — just read it back here.
 // ---------------------
-router.get("/", protect, async (req, res) => {
+router.get("/", identify, async (req, res) => {
   try {
-    // ✅ Use email from Supabase user object
-    const supabaseEmail = req.user.email;
-
-    let result = await pool.query(
+    const result = await pool.query(
       `SELECT id, phone, name, email, address,
               account_type, clinic_name,
               is_profile_complete, role
        FROM users
-       WHERE email = $1`,
-      [supabaseEmail]
+       WHERE id = $1`,
+      [req.user.internalId]
     );
 
-    let user = result.rows[0];
-
-    // ➕ Auto-create user row if first time login
-    if (!user) {
-      const newUser = await pool.query(
-        `INSERT INTO users (email, is_profile_complete)
-         VALUES ($1, false)
-         RETURNING *`,
-        [supabaseEmail]
-      );
-      user = newUser.rows[0];
-    }
+    const user = result.rows[0];
 
     res.json({
       id: user.id,
